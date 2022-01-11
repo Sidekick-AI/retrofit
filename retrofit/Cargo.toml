@@ -1,6 +1,6 @@
 [package]
 name = "retrofit"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "Automatically generate REST APIs for functions"
 license = "MIT OR Apache-2.0"
@@ -9,16 +9,16 @@ license = "MIT OR Apache-2.0"
 
 [features]
 default = ["server", "client"]
-server = ["rocket", "retrofit_codegen/server"]
-client = ["reqwasm", "reqwest", "retrofit_codegen/client"]
+server = ["retrofit_codegen/server"]
+client = ["retrofit_codegen/client"]
 
 [dependencies]
-reqwasm = {version="0.4.0", optional=true}
-reqwest = {version="0.11.8", features=["json"], optional=true}
-rocket = {version="0.5.0-rc.1", features=["json"], optional=true}
-retrofit_codegen = "0.1.2"
+retrofit_codegen = "0.1.3"
 serde = "1.0.133"
 serde_json = "1.0.74"
 
 [dev-dependencies]
 tokio = "1.15.0"
+reqwasm = "0.4.0"
+reqwest = {version="0.11.8", features=["json"]}
+rocket = {version="0.5.0-rc.1", features=["json"]}

@@ -1,13 +1,12 @@
 pub use retrofit_codegen::get_api;
-pub use rocket;
-pub use reqwest;
-pub use reqwasm;
 
 #[cfg(test)]
 mod tests {
+    pub use rocket;
+    pub use reqwest;
+    pub use reqwasm;
     use retrofit_codegen::get_api;
     use rocket::routes;
-    use crate as retrofit;
 
     #[tokio::test]
     async fn test_get_api() {
