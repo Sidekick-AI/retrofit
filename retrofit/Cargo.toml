@@ -1,6 +1,6 @@
 [package]
 name = "retrofit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Automatically generate REST APIs for functions"
 license = "MIT OR Apache-2.0"
