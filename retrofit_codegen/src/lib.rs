@@ -1,26 +1,35 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, ItemFn, FnArg, PatType, Pat};
+use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent};
 use quote::{quote};
 use proc_macro2::{Ident, Span};
 
 #[proc_macro_attribute]
-pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
-    let input_fn = parse_macro_input!(item as ItemFn);
+pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
+    let has_state = !header.to_string().replace(" ", "").is_empty();
+    let (state, pass_through_state) = if has_state {
+        let state = parse_macro_input!(header as Type);
+        (quote! {, state : &rocket::State<#state>}, quote!{, state})
+    } else {(quote!{}, quote!{})};
+    let input_fn = parse_macro_input!(function as ItemFn);
     
     // Get input function properties
-    let args = input_fn.sig.inputs.clone();
+    let mut args = input_fn.sig.inputs.clone();
     let return_type = input_fn.sig.output.clone();
     let input_fn_ident = input_fn.sig.ident.clone();
 
     // Create path for route
-    let raw_args = args.iter().map(|fn_arg| match fn_arg {
+    let mut raw_args: Vec<&PatIdent> = input_fn.sig.inputs.iter().map(|fn_arg| match fn_arg {
         FnArg::Typed(PatType { pat, .. }) => match &**pat {
             Pat::Ident(ident) => ident,
             _ => panic!("argument pattern is not a simple ident"),
         }
         FnArg::Receiver(_) => panic!("argument is a receiver"),
-    });
-    let arg_idents: Vec<Ident> = raw_args.clone().map(|i| i.ident.clone()).collect();
+    }).collect();
+    if has_state { // Remove last element because it is a state
+        raw_args.pop();
+        args.pop();
+    }
+    let arg_idents: Vec<Ident> = raw_args.iter().map(|i| i.ident.clone()).collect();
     let arg_ident_strings: Vec<String> = arg_idents.iter().map(|i| i.to_string()).collect();
 
     let route_path = if arg_ident_strings.is_empty() {
@@ -30,7 +39,7 @@ pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
     };
     // Request path
     let input_fn_ident_string = input_fn_ident.to_string();
-    let request_path_strings: Vec<proc_macro2::TokenStream> = raw_args.clone().map(|arg| {
+    let request_path_strings: Vec<proc_macro2::TokenStream> = raw_args.iter().map(|arg| {
         let ident = arg.ident.clone();
         quote! {serde_json::to_string( & #ident ).unwrap()}
     }).collect();
@@ -50,8 +59,8 @@ pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
         // Route function
         #[cfg(feature = "server")]
         #[rocket::get(#route_path)]
-        pub fn #route_ident ( #(#arg_idents : String),* ) -> String {
-            serde_json::to_string(& #input_fn_ident ( #(serde_json::from_str(&#raw_args).unwrap()),* )).unwrap()
+        pub fn #route_ident ( #(#arg_idents : String),* #state) -> String {
+            serde_json::to_string(& #input_fn_ident ( #(serde_json::from_str(&#raw_args).unwrap()),* #pass_through_state)).unwrap()
         }
 
         // Request function

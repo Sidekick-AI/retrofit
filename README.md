@@ -58,3 +58,5 @@ These features serve as a way to use the same code on a backend and frontend. By
 - [ ] Support generics
 - [ ] Support other HTTP client libraries (surf, etc.)
 - [ ] Support other HTTP server libraries (warp, actix, etc.)
+- [X] Support Rocket States
+- [ ] Better ergonomics for Rocket States (no attributes passed in, state not required to be last arg)

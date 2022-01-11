@@ -13,7 +13,7 @@ server = ["retrofit_codegen/server"]
 client = ["retrofit_codegen/client"]
 
 [dependencies]
-retrofit_codegen = "0.1.3"
+retrofit_codegen = {path="../retrofit_codegen"}
 serde = "1.0.133"
 serde_json = "1.0.74"
 
@@ -22,3 +22,4 @@ tokio = "1.15.0"
 reqwasm = "0.4.0"
 reqwest = {version="0.11.8", features=["json"]}
 rocket = {version="0.5.0-rc.1", features=["json"]}
+serial_test = "0.5.1"
