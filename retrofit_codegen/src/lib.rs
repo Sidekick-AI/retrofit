@@ -35,8 +35,8 @@ pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
         quote! {serde_json::to_string( & #ident ).unwrap()}
     }).collect();
     let request_path = if request_path_strings.is_empty() {
-        quote! {#input_fn_ident_string}
-    } else {
+        quote! {&format!("/{}", #input_fn_ident_string)} // Reqwasm is able to take relative urls
+    } else { // Reqwest cannot take relative urls so we put localhost (the base url should be an option defined in the macro)
         quote! {&format!("http://localhost:8000/{}/{}", #input_fn_ident_string, [#(#request_path_strings),*].join("/"))}
     };
 
