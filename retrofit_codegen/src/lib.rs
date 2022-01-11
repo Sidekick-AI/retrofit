@@ -48,12 +48,14 @@ pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
         #input_fn
         
         // Route function
+        #[cfg(feature = "server")]
         #[rocket::get(#route_path)]
         pub fn #route_ident ( #(#arg_idents : String),* ) -> String {
             serde_json::to_string(& #input_fn_ident ( #(serde_json::from_str(&#raw_args).unwrap()),* )).unwrap()
         }
 
         // Request function
+        #[cfg(feature = "client")]
         pub async fn #request_ident ( #args ) #return_type {
             // Send request to endpoint
             #[cfg(not(target_arch = "wasm32"))]
