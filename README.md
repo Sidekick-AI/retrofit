@@ -42,9 +42,16 @@ async fn plus_request(num1: i32, num2: i32) -> i32 {
 }
 ```
 
+## Feature Flags
+`server` - contains generated Rocket routes
+
+`client` - contains generated request function
+
+These features serve as a way to use the same code on a backend and frontend. By default they are both enabled, but if you have functions with a generated API in a crate of your own, and you use client/server feature flags, you can import the same crate on both backend and frontend, and your backend code won't be packaged with frontend code. This is usefull if you are targeting WASM on the frontend and using a DB system like Diesel (not supported on WASM) for your backend.
+
 ## Todo
 - [x] Basic `get_api`
-- [ ] Add `server` and `client` feature support (allows the exclusion of the route/request functions)
+- [x] Add `server` and `client` feature support (allows the exclusion of the route/request functions)
 - [ ] Support async functions
 - [ ] Add `post_api`
 - [ ] Support references
