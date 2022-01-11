@@ -41,3 +41,10 @@ async fn plus_request(num1: i32, num2: i32) -> i32 {
     ).unwrap()
 }
 ```
+
+## Todo
+- [x] Basic `get_api`
+- [ ] Support async functions
+- [ ] Add `post_api`
+- [ ] Support references
+- [ ] Support generics
