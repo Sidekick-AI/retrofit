@@ -6,14 +6,18 @@ use proc_macro2::{Ident, Span};
 #[proc_macro_attribute]
 pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let has_state = !header.to_string().replace(" ", "").is_empty();
-    let (state, pass_through_state) = if has_state {
-        let state = parse_macro_input!(header as Type);
-        (quote! {, state : &rocket::State<#state>}, quote!{, state})
-    } else {(quote!{}, quote!{})};
     let input_fn = parse_macro_input!(function as ItemFn);
     
     // Get input function properties
     let mut args = input_fn.sig.inputs.clone();
+    let (state, pass_through_state) = if has_state {
+        let state = parse_macro_input!(header as Type);
+        if args.len() < 2 {
+            (quote! {state : &rocket::State<#state>}, quote!{state})
+        } else {
+            (quote! {, state : &rocket::State<#state>}, quote!{, state})
+        }
+    } else {(quote!{}, quote!{})};
     let return_type = input_fn.sig.output.clone();
     let input_fn_ident = input_fn.sig.ident.clone();
 
