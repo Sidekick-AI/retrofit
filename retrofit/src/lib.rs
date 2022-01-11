@@ -1,3 +1,5 @@
+pub use retrofit_codegen::get_api;
+
 #[cfg(test)]
 mod tests {
     use retrofit_codegen::get_api;
