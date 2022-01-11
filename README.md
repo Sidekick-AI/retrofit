@@ -44,7 +44,10 @@ async fn plus_request(num1: i32, num2: i32) -> i32 {
 
 ## Todo
 - [x] Basic `get_api`
+- [ ] Add `server` and `client` feature support (allows the exclusion of the route/request functions)
 - [ ] Support async functions
 - [ ] Add `post_api`
 - [ ] Support references
 - [ ] Support generics
+- [ ] Support other HTTP client libraries (surf, etc.)
+- [ ] Support other HTTP server libraries (warp, actix, etc.)
