@@ -49,7 +49,7 @@ pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
         
         // Route function
         #[cfg(feature = "server")]
-        #[rocket::get(#route_path)]
+        #[retrofit::rocket::get(#route_path)]
         pub fn #route_ident ( #(#arg_idents : String),* ) -> String {
             serde_json::to_string(& #input_fn_ident ( #(serde_json::from_str(&#raw_args).unwrap()),* )).unwrap()
         }
@@ -60,13 +60,13 @@ pub fn get_api(_: TokenStream, item: TokenStream) -> TokenStream {
             // Send request to endpoint
             #[cfg(not(target_arch = "wasm32"))]
             return serde_json::from_str(
-                &reqwest::get(#request_path)
+                &retrofit::reqwest::get(#request_path)
                 .await.unwrap()
                 .text().await.unwrap()
             ).unwrap();
 
             #[cfg(target_arch = "wasm32")]
-            return reqwasm::http::Request::get(#request_path)
+            return retrofit::reqwasm::http::Request::get(#request_path)
                 .send().await.unwrap()
                 .json().await.unwrap();
         }

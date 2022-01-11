@@ -1,4 +1,7 @@
 pub use retrofit_codegen::get_api;
+pub use rocket;
+pub use reqwest;
+pub use reqwasm;
 
 #[cfg(test)]
 mod tests {
