@@ -7,6 +7,7 @@ pub use reqwasm;
 mod tests {
     use retrofit_codegen::get_api;
     use rocket::routes;
+    use crate as retrofit;
 
     #[tokio::test]
     async fn test_get_api() {
