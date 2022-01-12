@@ -1,6 +1,6 @@
 [package]
 name = "retrofit"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "Automatically generate REST APIs for functions"
 license = "MIT OR Apache-2.0"
@@ -8,12 +8,12 @@ license = "MIT OR Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["server", "client"]
-server = ["retrofit_codegen/server"]
-client = ["retrofit_codegen/client"]
+default = ["client", "server"]
+client = []
+server = []
 
 [dependencies]
-retrofit_codegen = "0.1.5"
+retrofit_codegen = "0.1.6"
 serde = "1.0.133"
 serde_json = "1.0.74"
 

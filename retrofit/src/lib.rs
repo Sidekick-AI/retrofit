@@ -2,10 +2,10 @@ pub use retrofit_codegen::get_api;
 
 #[cfg(test)]
 mod tests {
-    pub use rocket;
-    pub use reqwest;
     pub use reqwasm;
+    pub use reqwest;
     use retrofit_codegen::get_api;
+    pub use rocket;
     use rocket::routes;
     use std::sync::Mutex;
 
@@ -26,11 +26,18 @@ mod tests {
             rocket::build()
                 .mount("/", routes![greet_route])
                 .manage(Mutex::new("Robert".to_string()))
-                .launch().await
+                .launch()
+                .await
         });
 
-        assert_eq!(greet_request("Joe".to_string()).await, "Hello Joe, I'm here with Robert".to_string());
-        assert_eq!(greet_request("Frank".to_string()).await, "Hello Frank, I'm here with Joe".to_string());
+        assert_eq!(
+            greet_request("Joe".to_string()).await,
+            "Hello Joe, I'm here with Robert".to_string()
+        );
+        assert_eq!(
+            greet_request("Frank".to_string()).await,
+            "Hello Frank, I'm here with Joe".to_string()
+        );
 
         server_handle.abort();
         assert!(server_handle.await.unwrap_err().is_cancelled());
@@ -47,7 +54,10 @@ mod tests {
 
         // Launch server
         let server_handle = tokio::spawn(async {
-            rocket::build().mount("/", routes![plus_route]).launch().await
+            rocket::build()
+                .mount("/", routes![plus_route])
+                .launch()
+                .await
         });
 
         let input1 = 10;

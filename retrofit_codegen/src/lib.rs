@@ -45,7 +45,7 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let input_fn_ident_string = input_fn_ident.to_string();
     let request_path_strings: Vec<proc_macro2::TokenStream> = raw_args.iter().map(|arg| {
         let ident = arg.ident.clone();
-        quote! {serde_json::to_string( & #ident ).unwrap()}
+        quote! {serde_json::to_string( & #ident.clone() ).unwrap()}
     }).collect();
     let request_path = if request_path_strings.is_empty() {
         quote! {&format!("/{}", #input_fn_ident_string)} // Reqwasm is able to take relative urls
@@ -58,8 +58,9 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
 
     TokenStream::from(quote!{
         // Original function
+        #[cfg(feature = "server")]
         #input_fn
-        
+
         // Route function
         #[cfg(feature = "server")]
         #[rocket::get(#route_path)]
