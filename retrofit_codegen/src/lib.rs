@@ -48,9 +48,15 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
         quote! {serde_json::to_string( & #ident.clone() ).unwrap()}
     }).collect();
     let request_path = if request_path_strings.is_empty() {
-        quote! {&format!("/{}", #input_fn_ident_string)} // Reqwasm is able to take relative urls
-    } else { // Reqwest cannot take relative urls so we put localhost (the base url should be an option defined in the macro)
+        #[cfg(not(target_arch = "wasm32"))] // Reqwest cannot take relative urls so we put localhost (the base url should be an option defined in the macro)
+        quote! {&format!("http://localhost:8000/{}", #input_fn_ident_string)}
+        #[cfg(target_arch = "wasm32")] // Reqwasm is able to take relative urls
+        quote! {&format!("/{}", #input_fn_ident_string)}
+    } else {
+        #[cfg(not(target_arch = "wasm32"))]
         quote! {&format!("http://localhost:8000/{}/{}", #input_fn_ident_string, [#(#request_path_strings),*].join("/"))}
+        #[cfg(target_arch = "wasm32")]
+        quote! {&format!("/{}/{}", #input_fn_ident_string, [#(#request_path_strings),*].join("/"))}
     };
 
     let route_ident = Ident::new(&format!("{}_route", input_fn_ident_string), Span::call_site());
