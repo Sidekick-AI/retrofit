@@ -47,16 +47,17 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
         let ident = arg.ident.clone();
         quote! {serde_json::to_string( & #ident.clone() ).unwrap()}
     }).collect();
+    // Reqwest cannot take relative urls so we put localhost (the base url should be an option defined in the macro)
     let request_path = if request_path_strings.is_empty() {
-        #[cfg(not(target_arch = "wasm32"))] // Reqwest cannot take relative urls so we put localhost (the base url should be an option defined in the macro)
-        quote! {&format!("http://localhost:8000/{}", #input_fn_ident_string)}
-        #[cfg(target_arch = "wasm32")] // Reqwasm is able to take relative urls
-        quote! {&format!("/{}", #input_fn_ident_string)}
+        quote!{&format!("http://localhost:8000/{}", #input_fn_ident_string)} 
     } else {
-        #[cfg(not(target_arch = "wasm32"))]
         quote! {&format!("http://localhost:8000/{}/{}", #input_fn_ident_string, [#(#request_path_strings),*].join("/"))}
-        #[cfg(target_arch = "wasm32")]
-        quote! {&format!("/{}/{}", #input_fn_ident_string, [#(#request_path_strings),*].join("/"))}
+    };
+    // Reqwasm is able to take relative urls
+    let reqwasm_request_path = if request_path_strings.is_empty() {
+        quote!{&format!("/{}", #input_fn_ident_string)}
+    } else {
+        quote!{&format!("/{}/{}", #input_fn_ident_string, [#(#request_path_strings),*].join("/"))}
     };
 
     let route_ident = Ident::new(&format!("{}_route", input_fn_ident_string), Span::call_site());
@@ -71,22 +72,28 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
         #[cfg(feature = "server")]
         #[rocket::get(#route_path)]
         pub fn #route_ident ( #(#arg_idents : String),* #state) -> String {
+            println!("RECIEVED VALUES");
             serde_json::to_string(& #input_fn_ident ( #(serde_json::from_str(&#raw_args).unwrap()),* #pass_through_state)).unwrap()
         }
 
         // Request function
         #[cfg(feature = "client")]
         pub async fn #request_ident ( #args ) #return_type {
+            #[cfg(not(target_family = "wasm"))]
+            println!("Not wasm: {:?}", #request_path);
             // Send request to endpoint
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(target_family = "wasm"))]
             return serde_json::from_str(
                 &reqwest::get(#request_path)
                 .await.unwrap()
                 .text().await.unwrap()
             ).unwrap();
 
-            #[cfg(target_arch = "wasm32")]
-            return reqwasm::http::Request::get(#request_path)
+            #[cfg(target_family = "wasm")]
+            println!("From wasm: {:?}", #reqwasm_request_path);
+
+            #[cfg(target_family = "wasm")]
+            return reqwasm::http::Request::get(#reqwasm_request_path)
                 .send().await.unwrap()
                 .json().await.unwrap();
         }

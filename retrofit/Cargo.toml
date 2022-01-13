@@ -13,7 +13,7 @@ client = []
 server = []
 
 [dependencies]
-retrofit_codegen = "0.1.7"
+retrofit_codegen = {path="../retrofit_codegen"}
 serde = "1.0.133"
 serde_json = "1.0.74"
 

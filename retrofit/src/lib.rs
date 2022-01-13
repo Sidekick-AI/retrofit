@@ -51,6 +51,7 @@ mod tests {
         fn plus(num1: i32, num2: i32) -> i32 {
             num1 + num2
         }
+        println!("Created");
 
         // Launch server
         let server_handle = tokio::spawn(async {
@@ -59,11 +60,13 @@ mod tests {
                 .launch()
                 .await
         });
+        println!("Launched");
 
         let input1 = 10;
         let input2 = 100;
         // Call request
         let result = plus_request(input1, input2).await;
+        println!("Called");
         assert_eq!(result, plus(input1, input2));
 
         server_handle.abort();
