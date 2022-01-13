@@ -3,7 +3,7 @@ A library for generating REST APIs for functions.
 
 Currently only has get_api, an implementation for generating get references.
 
-When the #[get_api] macro is used, a request function is generated using `reqwasm` if on wasm or `reqwest` otherwise, and a `rocket` route. 
+When the `#[get_api]` or `#[post_api]` macro is used, a request function is generated using `reqwasm` if on wasm or `reqwest` otherwise, and a `rocket` route. 
 
 ## Usage
 ```rust
@@ -53,7 +53,7 @@ These features serve as a way to use the same code on a backend and frontend. By
 - [x] Basic `get_api`
 - [x] Add `server` and `client` feature support (allows the exclusion of the route/request functions)
 - [ ] Support async functions
-- [ ] Add `post_api`
+- [X] Add `post_api`
 - [ ] Support references
 - [ ] Support generics
 - [ ] Support other HTTP client libraries (surf, etc.)
