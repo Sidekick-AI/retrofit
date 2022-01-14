@@ -37,7 +37,7 @@ async fn test_get_api() {
 async fn test_get_api_state() {
     // Test a GET API with a managed state
     #[get_api(Mutex<String>)]
-    fn greet(name: String, state: &rocket::State<Mutex<String>>) -> String {
+    fn greet(name: String, state: &Mutex<String>) -> String {
         let mut state = state.lock().unwrap();
         let greeting = format!("Hello {}, I'm here with {}", name, state);
         *state = name;
@@ -97,7 +97,7 @@ async fn test_post_api() {
 async fn test_post_api_state() {
     // Test a GET API with a managed state
     #[post_api(Mutex<String>)]
-    fn greet(name: String, state: &rocket::State<Mutex<String>>) -> String {
+    fn greet(name: String, state: &Mutex<String>) -> String {
         let mut state = state.lock().unwrap();
         let greeting = format!("Hello {}, I'm here with {}", name, state);
         *state = name;

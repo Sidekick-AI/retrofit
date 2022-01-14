@@ -12,9 +12,9 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let (state, pass_through_state) = if has_state {
         let state = parse_macro_input!(header as Type);
         if args.len() < 2 {
-            (quote! {state : &rocket::State<#state>}, quote!{state})
+            (quote! {state : &rocket::State<#state>}, quote!{&**state})
         } else {
-            (quote! {, state : &rocket::State<#state>}, quote!{, state})
+            (quote! {, state : &rocket::State<#state>}, quote!{, &**state})
         }
     } else {(quote!{}, quote!{})};
     let return_type = input_fn.sig.output.clone();

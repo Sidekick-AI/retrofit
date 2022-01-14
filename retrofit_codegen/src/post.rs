@@ -36,7 +36,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let (route_header, route_args, pass_through_state) = if args.is_empty() {
         if has_state {
             let state = parse_macro_input!(header as Type);
-            (quote!{#[rocket::post(#route_path)]}, quote!{state : &rocket::State<#state>}, quote!{state})
+            (quote!{#[rocket::post(#route_path)]}, quote!{state : &rocket::State<#state>}, quote!{&**state})
         } else {
             (quote!{#[rocket::post(#route_path)]}, quote!{}, quote!{})
         }
@@ -45,7 +45,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         (
             quote!{#[rocket::post(#route_path, format="json", data="<data>")]}, 
             quote!{data: rocket::serde::json::Json<#data_struct_ident>, state : &rocket::State<#state>},
-            quote!{, state}
+            quote!{, &**state}
         )
     } else {
         (
