@@ -36,9 +36,9 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let arg_ident_strings: Vec<String> = arg_idents.iter().map(|i| i.to_string()).collect();
 
     let route_path = if arg_ident_strings.is_empty() {
-        format!("/{}", input_fn_ident.to_string())
+        format!("/{}", input_fn_ident)
     } else {
-        format!("/{}/{}", input_fn_ident.to_string(), arg_ident_strings.iter().map(|ident| format!("<{}>", ident)).collect::<Vec<String>>().join("/"))
+        format!("/{}/{}", input_fn_ident, arg_ident_strings.iter().map(|ident| format!("<{}>", ident)).collect::<Vec<String>>().join("/"))
     };
     // Request path
     let input_fn_ident_string = input_fn_ident.to_string();

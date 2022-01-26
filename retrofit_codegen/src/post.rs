@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent};
-use quote::{quote};
+use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent, Attribute, token::Ref};
+use quote::{quote, ToTokens};
 use proc_macro2::{Ident, Span};
 
 pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
@@ -25,13 +25,15 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         args.pop();
     }
     let arg_idents: Vec<Ident> = raw_args.iter().map(|i| i.ident.clone()).collect();
+    let tmp: Vec<(Ident, Type)> = raw_args.iter().map(|i| (i.ident.clone(), i.attrs[0].)).collect();
+    println!("Args: {:?}", quote!{#args});
 
     let input_fn_ident_string = input_fn_ident.to_string();
     let route_ident = Ident::new(&format!("{}_route", input_fn_ident_string), Span::call_site());
     let request_ident = Ident::new(&format!("{}_request", input_fn_ident_string), Span::call_site());
     let data_struct_ident = Ident::new(&format!("{}Data", input_fn_ident_string), Span::call_site());
 
-    let route_path = format!("/{}", input_fn_ident.to_string());
+    let route_path = format!("/{}", input_fn_ident);
     let unpack_args = if args.is_empty() {quote!{}} else {quote!{let #data_struct_ident{ #(#arg_idents),* } = (*data).clone();}};
     let (route_header, route_args, pass_through_state) = if args.is_empty() {
         if has_state {
@@ -66,7 +68,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         quote! {
             .body(serde_json::to_string(
                 &#data_struct_ident {
-                    #(#arg_idents),*
+                    #(#arg_idents: #arg_idents.to_owned()),*
                 }
             ).unwrap()).header("Content-Type", "application/json")
         }
