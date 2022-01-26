@@ -157,7 +157,7 @@ async fn test_post_api_state() {
 async fn test_post_api_ref() {
     // Test POST API with references
     #[post_api]
-    fn greet(nm: &String, num: &i32) -> String {
+    fn greet(nm: &String, num: i32) -> String {
         format!("Hello {}{}", nm, num)
     }
 
@@ -172,8 +172,8 @@ async fn test_post_api_ref() {
 
     let name = "Gordon Shumway".to_string();
     assert_eq!(
-        greet_request(&name, &23).await,
-        greet(&name, &23)
+        greet_request(&name, 23).await,
+        greet(&name, 23)
     );
 
     server_handle.abort();
