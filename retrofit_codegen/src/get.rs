@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent};
-use quote::{quote};
+use quote::{quote, ToTokens};
 use proc_macro2::{Ident, Span};
 
 pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
@@ -33,6 +33,20 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
         args.pop();
     }
     let arg_idents: Vec<Ident> = raw_args.iter().map(|i| i.ident.clone()).collect();
+    let arg_types: Vec<(Ident, proc_macro2::TokenTree, bool)> = args.iter().zip(arg_idents.iter()).map(|(i, ident)| 
+        (
+            ident.clone(),
+            i.to_token_stream().into_iter().last().unwrap(),
+            i.into_token_stream().to_string().contains('&')
+        )
+    ).collect();
+    let fn_input_args: Vec<proc_macro2::TokenStream> = arg_types.iter().map(|(ident, _, r)| {
+        if *r {
+            quote!{&serde_json::from_str(&#ident).unwrap()}
+        } else {
+            quote!{serde_json::from_str(&#ident).unwrap()}
+        }
+    }).collect();
     let arg_ident_strings: Vec<String> = arg_idents.iter().map(|i| i.to_string()).collect();
 
     let route_path = if arg_ident_strings.is_empty() {
@@ -65,17 +79,19 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     TokenStream::from(quote!{
         // Original function
         #[cfg(feature = "server")]
+        #[allow(clippy::ptr_arg)]
         #input_fn
 
         // Route function
         #[cfg(feature = "server")]
         #[rocket::get(#route_path)]
         pub fn #route_ident ( #(#arg_idents : String),* #state) -> String {
-            serde_json::to_string(& #input_fn_ident ( #(serde_json::from_str(&#raw_args).unwrap()),* #pass_through_state)).unwrap()
+            serde_json::to_string(& #input_fn_ident ( #(#fn_input_args),* #pass_through_state)).unwrap()
         }
 
         // Request function
         #[cfg(feature = "client")]
+        #[allow(clippy::ptr_arg)]
         pub async fn #request_ident ( #args ) #return_type {
             // Send request to endpoint
             #[cfg(not(target_family = "wasm"))]

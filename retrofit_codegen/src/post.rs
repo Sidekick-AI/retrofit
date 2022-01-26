@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent, Attribute, token::Ref};
+use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent};
 use quote::{quote, ToTokens};
 use proc_macro2::{Ident, Span};
 
@@ -25,8 +25,21 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         args.pop();
     }
     let arg_idents: Vec<Ident> = raw_args.iter().map(|i| i.ident.clone()).collect();
-    let tmp: Vec<(Ident, Type)> = raw_args.iter().map(|i| (i.ident.clone(), i.attrs[0].)).collect();
-    println!("Args: {:?}", quote!{#args});
+    let arg_types: Vec<(Ident, proc_macro2::TokenTree, bool)> = args.iter().zip(arg_idents.iter()).map(|(i, ident)| 
+        (
+            ident.clone(),
+            i.to_token_stream().into_iter().last().unwrap(),
+            i.into_token_stream().to_string().contains('&')
+        )
+    ).collect();
+    let fn_input_args: Vec<proc_macro2::TokenStream> = arg_types.iter().map(|(ident, _, r)| {
+        if *r {
+            quote!{& #ident}
+        } else {
+            quote!{#ident}
+        }
+    }).collect();
+    let struct_types: Vec<proc_macro2::TokenStream> = arg_types.iter().map(|(ident, ty, _)| quote!{#ident: #ty}).collect();
 
     let input_fn_ident_string = input_fn_ident.to_string();
     let route_ident = Ident::new(&format!("{}_route", input_fn_ident_string), Span::call_site());
@@ -77,13 +90,15 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
     TokenStream::from(quote!{
         // Original function
         #[cfg(feature = "server")]
+        #[allow(clippy::ptr_arg)]
         #input_fn
 
         // Data Struct
         #[derive(serde::Serialize, serde::Deserialize, Clone)]
         #[allow(non_camel_case_types)]
         pub struct #data_struct_ident {
-            #args
+            #(#struct_types),*
+            //#args
         }
 
         // Route function
@@ -92,12 +107,13 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         pub fn #route_ident ( #route_args ) -> String {
             #unpack_args
             serde_json::to_string(
-                & #input_fn_ident ( #(#arg_idents),* #pass_through_state)
+                & #input_fn_ident ( #(#fn_input_args),* #pass_through_state)
             ).unwrap()
         }
 
         // Request function
         #[cfg(feature = "client")]
+        #[allow(clippy::ptr_arg)]
         pub async fn #request_ident ( #args ) #return_type {
             // Send request to endpoint
             #[cfg(not(target_family = "wasm"))]

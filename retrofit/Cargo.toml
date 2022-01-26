@@ -1,6 +1,6 @@
 [package]
 name = "retrofit"
-version = "0.1.12"
+version = "0.1.13"
 edition = "2021"
 description = "Automatically generate REST APIs for functions"
 license = "MIT OR Apache-2.0"
@@ -15,8 +15,7 @@ client = []
 server = []
 
 [dependencies]
-#retrofit_codegen = "0.1.9"
-retrofit_codegen = {path="../retrofit_codegen"}
+retrofit_codegen = "0.1.10"
 serde = "1.0.133"
 serde_json = "1.0.74"
 

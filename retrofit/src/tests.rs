@@ -3,7 +3,6 @@ pub use reqwest;
 use retrofit_codegen::{get_api, post_api};
 pub use rocket;
 use rocket::routes;
-use serde::{Serialize, Deserialize};
 use std::sync::Mutex;
 
 #[tokio::test]
@@ -62,6 +61,32 @@ async fn test_get_api_state() {
         greet_request("Frank".to_string()).await,
         "Hello Frank, I'm here with Joe".to_string()
     );
+
+    server_handle.abort();
+    assert!(server_handle.await.unwrap_err().is_cancelled());
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_get_api_ref() {
+    // Test a normal GET API
+    #[get_api]
+    fn greet(name: &String) -> String {
+        format!("Hello {}", name)
+    }
+
+    // Launch server
+    let server_handle = tokio::spawn(async {
+        rocket::build()
+            .mount("/", routes![greet_route])
+            .launch()
+            .await
+    });
+
+    let name = "Sheila".to_string();
+    // Call request
+    let result = greet_request(&name).await;
+    assert_eq!(result, greet(&name));
 
     server_handle.abort();
     assert!(server_handle.await.unwrap_err().is_cancelled());
@@ -132,39 +157,9 @@ async fn test_post_api_state() {
 async fn test_post_api_ref() {
     // Test POST API with references
     #[post_api]
-    fn greet<'a>(nm: &'a str) -> String {
-        format!("Hello {}", nm)
+    fn greet(nm: &String, num: &i32) -> String {
+        format!("Hello {}{}", nm, num)
     }
-
-    // Should generate
-    // fn greet(name: &str) -> String {
-    //     format!("Hello {}", name)
-    // }
-
-    // #[derive(Serialize, Deserialize, Clone)]
-    // pub struct greetData {
-    //     name: String
-    // }
-
-    // #[rocket::post("/greet_route", format="json", data="<data>")]
-    // fn greet_route(data: rocket::serde::json::Json<greetData>) -> String {
-    //     let greetData{name} = (*data).clone();
-    //     greet(&name)
-    // }
-
-    // async fn greet_request(name: &str) -> String {
-    //     return serde_json::from_str(
-    //         &reqwest::Client::new()
-    //         .post("/greet_route")
-    //         .body(serde_json::to_string(
-    //             &greetData {
-    //                 name: name.to_owned(),
-    //             }
-    //         ).unwrap()).header("Content-Type", "application/json")
-    //         .send().await.unwrap()
-    //         .text().await.unwrap()
-    //     ).unwrap();
-    // }
 
     // Launch server
     let server_handle = tokio::spawn(async {
@@ -175,9 +170,10 @@ async fn test_post_api_ref() {
             .await
     });
 
+    let name = "Gordon Shumway".to_string();
     assert_eq!(
-        greet_request(&"Joe".to_string()).await,
-        "Hello Joe".to_string()
+        greet_request(&name, &23).await,
+        greet(&name, &23)
     );
 
     server_handle.abort();
