@@ -54,7 +54,7 @@ These features serve as a way to use the same code on a backend and frontend. By
 - [x] Add `server` and `client` feature support (allows the exclusion of the route/request functions)
 - [ ] Support async functions
 - [X] Add `post_api`
-- [ ] Support references
+- [x] Support references
 - [ ] Support generics
 - [ ] Support other HTTP client libraries (surf, etc.)
 - [ ] Support other HTTP server libraries (warp, actix, etc.)
