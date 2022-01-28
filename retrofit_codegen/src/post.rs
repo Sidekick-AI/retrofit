@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent};
 use quote::{quote, ToTokens};
@@ -25,13 +27,22 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         args.pop();
     }
     let arg_idents: Vec<Ident> = raw_args.iter().map(|i| i.ident.clone()).collect();
-    let arg_types: Vec<(Ident, proc_macro2::TokenTree, bool)> = args.iter().zip(arg_idents.iter()).map(|(i, ident)| 
+    let arg_types: Vec<(Ident, proc_macro2::TokenStream, bool)> = args.iter().zip(arg_idents.iter()).map(|(i, ident)| 
         (
             ident.clone(),
-            i.to_token_stream().into_iter().last().unwrap(),
+            if i.into_token_stream().to_string().contains('&') {
+                let string = i.to_token_stream().to_string();
+                let string = proc_macro2::TokenStream::from_str(&string[string.find('&').unwrap() + 1..]).unwrap();
+                quote!{#string}
+            } else {
+                let string = i.to_token_stream().to_string();
+                let string = proc_macro2::TokenStream::from_str(&string[string.find(':').unwrap() + 1..]).unwrap();
+                quote!{#string}
+            },
             i.into_token_stream().to_string().contains('&')
         )
     ).collect();
+
     let fn_input_args: Vec<proc_macro2::TokenStream> = arg_types.iter().map(|(ident, _, r)| {
         if *r {
             quote!{& #ident}
