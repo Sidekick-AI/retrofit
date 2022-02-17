@@ -1,0 +1,28 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out Main Branch
+      uses: actions/checkout@v2
+      with:
+        path: main
+    - name: Build
+      run: cargo build --verbose
+      working-directory: ./main/retrofit
+      
+    - name: Run tests
+      run: cargo test --verbose
+      working-directory: ./main/retrofit
