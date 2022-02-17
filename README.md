@@ -1,7 +1,7 @@
 # retrofit
 A library for generating REST APIs for functions.
 
-Currently only has get_api, an implementation for generating get references.
+Currently supports generating `get` and `post` APIs.
 
 When the `#[get_api]` or `#[post_api]` macro is used, a request function is generated using `reqwasm` if on wasm or `reqwest` otherwise, and a `rocket` route. 
 
