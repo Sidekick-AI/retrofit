@@ -1,12 +1,13 @@
-use std::str::FromStr;
+use std::{str::FromStr, collections::hash_map::DefaultHasher, hash::{Hash, Hasher}};
 
 use proc_macro::TokenStream;
+use rand::{distributions::Alphanumeric, Rng, prelude::StdRng, SeedableRng};
 use syn::{parse_macro_input, ItemFn, Type, FnArg, PatType, Pat, PatIdent};
 use quote::{quote, ToTokens};
 use proc_macro2::{Ident, Span};
 
 pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
-    let has_state = !header.to_string().replace(" ", "").is_empty();
+    let has_state = !header.to_string().replace(' ', "").is_empty();
     let input_fn = parse_macro_input!(function as ItemFn);
     
     // Get input function properties
@@ -56,15 +57,27 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let route_ident = Ident::new(&format!("{}_route", input_fn_ident_string), Span::call_site());
     let request_ident = Ident::new(&format!("{}_request", input_fn_ident_string), Span::call_site());
     let data_struct_ident = Ident::new(&format!("{}Data", input_fn_ident_string), Span::call_site());
+    
+    // Security type and random string
+    let secure_struct_ident = Ident::new(&format!("{}Secure", input_fn_ident_string), Span::call_site());
+    let mut s = DefaultHasher::new();
+    input_fn_ident_string.hash(&mut s);
+    let hash = s.finish();
+    let secure_string = format!("Bearer {}", StdRng::seed_from_u64(hash)
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect::<String>());
+
 
     let route_path = format!("/{}", input_fn_ident);
     let unpack_args = if args.is_empty() {quote!{}} else {quote!{let #data_struct_ident{ #(#arg_idents),* } = (*data).clone();}};
     let (route_header, route_args, pass_through_state) = if args.is_empty() {
         if has_state {
             let state = parse_macro_input!(header as Type);
-            (quote!{#[rocket::post(#route_path)]}, quote!{state : &rocket::State<#state>}, quote!{&**state})
+            (quote!{#[rocket::post(#route_path)]}, quote!{state : &rocket::State<#state>, _: #secure_struct_ident}, quote!{&**state})
         } else {
-            (quote!{#[rocket::post(#route_path)]}, quote!{}, quote!{})
+            (quote!{#[rocket::post(#route_path)]}, quote!{_: #secure_struct_ident}, quote!{})
         }
     } else if has_state {
         let state = parse_macro_input!(header as Type);
@@ -104,12 +117,33 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         #[allow(clippy::ptr_arg)]
         #input_fn
 
+        // Secure Struct
+        #[derive(Debug)]
+        pub struct #secure_struct_ident;
+
+        #[rocket::async_trait]
+        impl<'r> rocket::request::FromRequest<'r> for #secure_struct_ident {
+            type Error = String;
+
+            async fn from_request(req: &'r rocket::Request<'_>) -> rocket::request::Outcome<Self, Self::Error> {
+                match req.headers().get_one("authorization") {
+                    Some(h) => {
+                        if h == #secure_string { // Random string that will be in the header of every request
+                            rocket::request::Outcome::Success(#secure_struct_ident)
+                        } else {
+                            rocket::request::Outcome::Forward(())
+                        }
+                    }
+                    None => rocket::request::Outcome::Forward(()),
+                }
+            }
+        }
+
         // Data Struct
         #[derive(serde::Serialize, serde::Deserialize, Clone)]
         #[allow(non_camel_case_types)]
         pub struct #data_struct_ident {
             #(#struct_types),*
-            //#args
         }
 
         // Route function
@@ -131,6 +165,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
             return serde_json::from_str(
                 &reqwest::Client::new()
                 .post(#request_path)
+                .header("authorization", #secure_string)
                 #attached_body
                 .send().await.unwrap()
                 .text().await.unwrap()
@@ -138,6 +173,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
 
             #[cfg(target_family = "wasm")]
             return reqwasm::http::Request::post(#reqwasm_request_path)
+                .header("authorization", #secure_string)
                 #attached_body
                 .send().await.unwrap()
                 .json().await.unwrap();

@@ -4,7 +4,7 @@ use quote::{quote, ToTokens};
 use proc_macro2::{Ident, Span};
 
 pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
-    let has_state = !header.to_string().replace(" ", "").is_empty();
+    let has_state = !header.to_string().replace(' ', "").is_empty();
     let input_fn = parse_macro_input!(function as ItemFn);
     
     // Get input function properties
