@@ -121,6 +121,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         #[derive(Debug)]
         pub struct #secure_struct_ident;
 
+        #[cfg(feature = "server")]
         #[rocket::async_trait]
         impl<'r> rocket::request::FromRequest<'r> for #secure_struct_ident {
             type Error = String;
