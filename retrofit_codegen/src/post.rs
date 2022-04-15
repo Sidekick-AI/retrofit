@@ -75,9 +75,9 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let (route_header, route_args, pass_through_state) = if args.is_empty() {
         if has_state {
             let state = parse_macro_input!(header as Type);
-            (quote!{#[rocket::post(#route_path)]}, quote!{state : &rocket::State<#state>, _: #secure_struct_ident}, quote!{&**state})
+            (quote!{#[rocket::post(#route_path)]}, quote!{state : &rocket::State<#state>, _secure: #secure_struct_ident}, quote!{&**state})
         } else {
-            (quote!{#[rocket::post(#route_path)]}, quote!{_: #secure_struct_ident}, quote!{})
+            (quote!{#[rocket::post(#route_path)]}, quote!{_secure: #secure_struct_ident}, quote!{})
         }
     } else if has_state {
         let state = parse_macro_input!(header as Type);
