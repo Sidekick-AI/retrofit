@@ -183,7 +183,7 @@ async fn test_post_api_ref() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_rocket_route_mount() {
-    #[crate::mount_rocket_routes]
+    #[crate::generate_rocket_routes]
     mod functions {
         // Test POST API with references
         #[crate::post_api]

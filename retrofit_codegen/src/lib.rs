@@ -18,6 +18,6 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn mount_rocket_routes(header: TokenStream, function: TokenStream) -> TokenStream {
-    rocket::mount_rocket_routes(header, function)
+pub fn generate_rocket_routes(header: TokenStream, function: TokenStream) -> TokenStream {
+    rocket::generate_rocket_routes(header, function)
 }

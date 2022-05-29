@@ -1,7 +1,7 @@
 use proc_macro2::{TokenStream, TokenTree, Ident, Span};
 use quote::quote;
 
-pub fn mount_rocket_routes(_header: proc_macro::TokenStream, stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn generate_rocket_routes(_header: proc_macro::TokenStream, stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let stream = proc_macro2::TokenStream::from(stream);
     // Get module name and inner stream
     let mut stream_iter = stream.into_iter();
