@@ -179,3 +179,34 @@ async fn test_post_api_ref() {
     server_handle.abort();
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
+
+#[tokio::test]
+#[serial_test::serial]
+async fn test_rocket_route_mount() {
+    #[crate::mount_rocket_routes]
+    mod functions {
+        // Test POST API with references
+        #[crate::post_api]
+        pub fn greet(nm: &String, num: i32) -> String {
+            format!("Hello {}{}", nm, num)
+        }
+    }
+
+    // Launch server
+    let server_handle = tokio::spawn(async {
+        rocket::build()
+            .mount("/", functions::rocket_routes())
+            .manage(Mutex::new("Robert".to_string()))
+            .launch()
+            .await
+    });
+
+    let name = "Gordon Shumway".to_string();
+    assert_eq!(
+        functions::greet_request(&name, 23).await,
+        functions::greet(&name, 23)
+    );
+
+    server_handle.abort();
+    assert!(server_handle.await.unwrap_err().is_cancelled());
+}
