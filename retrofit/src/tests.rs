@@ -120,6 +120,31 @@ async fn test_post_api() {
 
 #[tokio::test]
 #[serial_test::serial]
+async fn test_post_api_vec() {
+    #[post_api]
+    fn sum(nums: Vec<i32>) -> i32 {
+        nums.iter().sum()
+    }
+
+    // Launch server
+    let server_handle = tokio::spawn(async {
+        rocket::build()
+            .mount("/", routes![sum_route])
+            .launch()
+            .await
+    });
+
+    let inputs = vec![10, 123, 4354];
+    // Call request
+    let result = sum_request(inputs.clone()).await;
+    assert_eq!(result, sum(inputs));
+
+    server_handle.abort();
+    assert!(server_handle.await.unwrap_err().is_cancelled());
+}
+
+#[tokio::test]
+#[serial_test::serial]
 async fn test_post_api_state() {
     // Test a GET API with a managed state
     #[post_api(Mutex<String>)]
