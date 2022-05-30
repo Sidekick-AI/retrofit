@@ -1,6 +1,3 @@
-#![feature(custom_inner_attributes)]
-#![feature(extend_one)]
-
 mod get;
 mod post;
 mod rocket;
@@ -18,6 +15,11 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn generate_rocket_routes(header: TokenStream, function: TokenStream) -> TokenStream {
-    rocket::generate_rocket_routes(header, function)
+pub fn rocket_routes_module(header: TokenStream, inner: TokenStream) -> TokenStream {
+    rocket::rocket_routes_module(header, inner)
+}
+
+#[proc_macro]
+pub fn rocket_routes(inner: TokenStream) -> TokenStream {
+    rocket::rocket_routes(inner)
 }
