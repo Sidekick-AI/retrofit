@@ -10,7 +10,9 @@ repository = "https://github.com/Sidekick-AI/retrofit/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["client", "server"]
+default = ["axum", "client", "server"]
+axum = []
+rocket = []
 client = []
 server = []
 

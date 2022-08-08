@@ -5,6 +5,7 @@ pub use rocket;
 use rocket::routes;
 use std::sync::Mutex;
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_get_api() {
@@ -32,6 +33,7 @@ async fn test_get_api() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_get_api_state() {
@@ -66,6 +68,7 @@ async fn test_get_api_state() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_get_api_ref() {
@@ -92,6 +95,7 @@ async fn test_get_api_ref() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_post_api() {
@@ -118,6 +122,7 @@ async fn test_post_api() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_post_api_vec() {
@@ -143,6 +148,7 @@ async fn test_post_api_vec() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_post_api_state() {
@@ -177,6 +183,7 @@ async fn test_post_api_state() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
+#[cfg(feature="rocket")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_post_api_ref() {
