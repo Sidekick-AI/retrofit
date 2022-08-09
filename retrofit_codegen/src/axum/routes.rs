@@ -31,7 +31,7 @@ pub fn routes_module(_header: proc_macro::TokenStream, stream: proc_macro::Token
         #[cfg(feature = "server")]
         pub fn routes() -> axum::Router {
             axum::Router::new()
-                #(.route(#route_names)),*
+                #(.route(#route_names))*
         }
 
         #stream
@@ -56,8 +56,8 @@ pub fn routes(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     proc_macro::TokenStream::from(quote!{
         #[cfg(feature = "server")]
         pub fn routes() -> axum::Router {
-            axum::Router::new()
-                #(.route(#route_names)),*
+            axum::Router::new() 
+                #( .route(#route_names) )*
         }
 
         #stream

@@ -1,6 +1,6 @@
 [package]
 name = "retrofit_codegen"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 description = "proc macro crate for retrofit"
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,7 @@ license = "MIT OR Apache-2.0"
 proc-macro = true
 
 [features]
-default = []
+default = ["axum"]
 rocket = []
 axum = []
 
