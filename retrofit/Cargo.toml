@@ -17,7 +17,7 @@ client = []
 server = []
 
 [dependencies]
-retrofit_codegen = {path="../retrofit_codegen"}
+retrofit_codegen = {version="0.3", default-features=false}
 serde = "1.0.133"
 serde_json = "1.0.74"
 
