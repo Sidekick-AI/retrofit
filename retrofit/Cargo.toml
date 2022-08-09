@@ -1,6 +1,6 @@
 [package]
 name = "retrofit"
-version = "0.2.6"
+version = "0.3.0"
 edition = "2021"
 description = "Automatically generate REST APIs for functions"
 license = "MIT OR Apache-2.0"
@@ -11,19 +11,20 @@ repository = "https://github.com/Sidekick-AI/retrofit/"
 
 [features]
 default = ["axum", "client", "server"]
-axum = []
-rocket = []
+axum = ["retrofit_codegen/axum"]
+rocket = ["retrofit_codegen/rocket"]
 client = []
 server = []
 
 [dependencies]
-retrofit_codegen = "0.2.6"
+retrofit_codegen = {path="../retrofit_codegen"}
 serde = "1.0.133"
 serde_json = "1.0.74"
 
 [dev-dependencies]
-tokio = "1.15.0"
+tokio = {version="1.15.0", features=["full"]}
 reqwasm = "0.4.0"
 reqwest = {version="0.11.8", features=["json"]}
-rocket = {version="0.5.0-rc.1", features=["json"]}
+rocket = {version="0.5.0-rc.2", features=["json"]}
 serial_test = "0.5.1"
+axum = {version="0.5.13", features=["headers"]}

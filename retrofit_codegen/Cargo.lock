@@ -81,8 +81,9 @@ dependencies = [
 
 [[package]]
 name = "retrofit_codegen"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
+ "cfg-if",
  "proc-macro2",
  "quote",
  "rand",
