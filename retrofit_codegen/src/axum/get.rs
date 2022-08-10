@@ -74,19 +74,19 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let (route_args, pass_through_state) = if args.is_empty() {
         if has_state {
             let state = parse_macro_input!(header as Type);
-            (quote!{axum::extension::Extension(state) : axum::Extension<#state>, _secure: #secure_struct_ident}, quote!{&state})
+            (quote!{axum::extension::Extension(state) : axum::Extension<#state>}, quote!{&state})
         } else {
-            (quote!{_secure: #secure_struct_ident}, quote!{})
+            (quote!{}, quote!{})
         }
     } else if has_state {
         let state = parse_macro_input!(header as Type);
         (
-            quote!{axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>, axum::Extension(state) : axum::Extension<#state>, _secure: #secure_struct_ident},
+            quote!{axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>, axum::Extension(state) : axum::Extension<#state>},
             quote!{, &state}
         )
     } else {
         (
-            quote!{axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>, _secure: #secure_struct_ident},
+            quote!{axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>},
             quote!{}
         )
     };
@@ -122,6 +122,7 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
 
         pub struct #forbidden_struct_ident;
 
+        #[cfg(feature = "server")]
         impl axum::response::IntoResponse for #forbidden_struct_ident {
             fn into_response(self) -> axum::response::Response {
                 axum::http::StatusCode::FORBIDDEN.into_response()
@@ -168,13 +169,11 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
         pub async fn #request_ident ( #args ) #return_type {
             // Send request to endpoint
             #[cfg(not(target_family = "wasm"))]
-            return serde_json::from_str(
-                &reqwest::Client::new()
+            return reqwest::Client::new()
                 .get(#request_path)
                 .header("authorization", #secure_string)
                 .send().await.unwrap()
-                .text().await.unwrap()
-            ).unwrap();
+                .json().await.unwrap();
 
             #[cfg(target_family = "wasm")]
             return reqwasm::http::Request::get(#reqwasm_request_path)

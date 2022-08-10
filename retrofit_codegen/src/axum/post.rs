@@ -120,6 +120,7 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
 
         pub struct #forbidden_struct_ident;
 
+        #[cfg(feature = "server")]
         impl axum::response::IntoResponse for #forbidden_struct_ident {
             fn into_response(self) -> axum::response::Response {
                 axum::http::StatusCode::FORBIDDEN.into_response()
@@ -166,14 +167,12 @@ pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
         pub async fn #request_ident ( #args ) #return_type {
             // Send request to endpoint
             #[cfg(not(target_family = "wasm"))]
-            return serde_json::from_str(
-                &reqwest::Client::new()
+            return reqwest::Client::new()
                 .post(#request_path)
                 .header("authorization", #secure_string)
                 #attached_body
                 .send().await.unwrap()
-                .text().await.unwrap()
-            ).unwrap();
+                .json().await.unwrap();
 
             #[cfg(target_family = "wasm")]
             return reqwasm::http::Request::post(#reqwasm_request_path)
