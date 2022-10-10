@@ -319,9 +319,8 @@ async fn test_axum_get_api_state() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/greet", axum::routing::get(greet_route))
-            .layer(axum::Extension(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string()))));
+        let app = axum::Router::with_state(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string())))
+            .route("/greet", axum::routing::get(greet_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
             .await.unwrap();
@@ -438,9 +437,8 @@ async fn test_axum_post_api_state() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/greet", axum::routing::post(greet_route))
-            .layer(axum::Extension(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string()))));
+        let app = axum::Router::with_state(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string())))
+            .route("/greet", axum::routing::post(greet_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
             .await.unwrap();

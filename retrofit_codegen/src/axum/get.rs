@@ -74,19 +74,19 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let (route_args, pass_through_state) = if args.is_empty() {
         if has_state {
             let state = parse_macro_input!(header as Type);
-            (quote!{axum::extension::Extension(state) : axum::Extension<#state>}, quote!{&state})
+            (quote!{_secure: #secure_struct_ident, axum::extract::State(state) : axum::extract::State<#state>}, quote!{&state})
         } else {
             (quote!{}, quote!{})
         }
     } else if has_state {
         let state = parse_macro_input!(header as Type);
         (
-            quote!{axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>, axum::Extension(state) : axum::Extension<#state>},
+            quote!{_secure: #secure_struct_ident, axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>, axum::extract::State(state) : axum::extract::State<#state>},
             quote!{, &state}
         )
     } else {
         (
-            quote!{axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>},
+            quote!{_secure: #secure_struct_ident, axum::extract::Query(#data_struct_ident{ #(#arg_idents),* }) : axum::extract::Query<#data_struct_ident>},
             quote!{}
         )
     };
@@ -131,14 +131,17 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
 
         #[cfg(feature = "server")]
         #[axum::async_trait]
-        impl<B> axum::extract::FromRequest<B> for #secure_struct_ident
-        where 
-            B: Sync + Send + Sized, 
+        impl<S> axum::extract::FromRequestParts<S> for #secure_struct_ident
+        where
+            S: Sync + Send,
         {
             type Rejection = #forbidden_struct_ident;
 
-            async fn from_request(req: &mut axum::extract::RequestParts<B>) -> Result<Self, Self::Rejection> {
-                if let Some(s) = req.headers().get("authorization") {
+            async fn from_request_parts(
+                req: &mut http::request::Parts,
+                _: &S
+            ) -> Result<Self, Self::Rejection> {
+                if let Some(s) = req.headers.get("authorization") {
                     if s == #secure_string {
                         return Ok(Self);
                     }
