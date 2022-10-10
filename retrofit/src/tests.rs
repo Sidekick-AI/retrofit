@@ -505,6 +505,14 @@ async fn test_axum_routes_module() {
             *state = name;
             greeting
         }
+
+        #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+        pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+            let mut state = state.lock().unwrap();
+            let greeting = format!("Hello {}, I'm here with {}", name, state);
+            *state = name;
+            greeting
+        }
     }
 
     // Launch server
@@ -538,6 +546,14 @@ async fn test_axum_routes() {
             
             #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
             pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+                let mut state = state.lock().unwrap();
+                let greeting = format!("Hello {}, I'm here with {}", name, state);
+                *state = name;
+                greeting
+            }
+
+            #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+            pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
                 let mut state = state.lock().unwrap();
                 let greeting = format!("Hello {}, I'm here with {}", name, state);
                 *state = name;

@@ -15,8 +15,8 @@ pub fn routes_module(_header: proc_macro::TokenStream, stream: proc_macro::Token
         _ => {panic!("Attribute must be on a module")}
     };
 
-    let (mut found_api_tag, mut route_type, mut after_function, mut state) = (false, RouteType::Post, false, None);
-    let route_names: Vec<TokenStream> = parse_stream(stream.clone(), &mut found_api_tag, &mut route_type, &mut after_function, &mut state)
+    let (mut found_api_tag, mut route_type, mut after_function, mut state, mut temp_state) = (false, RouteType::Post, false, None, "".to_string());
+    let route_names: Vec<TokenStream> = parse_stream(stream.clone(), &mut found_api_tag, &mut route_type, &mut after_function, &mut state, &mut temp_state)
         .into_iter().map(|(name, route, t)| {
             let ident = Ident::new(&route, Span::call_site());
             let string = format!("/{}", name);
@@ -58,8 +58,8 @@ pub fn routes_module(_header: proc_macro::TokenStream, stream: proc_macro::Token
 pub fn routes(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let stream = proc_macro2::TokenStream::from(stream);
 
-    let (mut found_api_tag, mut route_type, mut after_function, mut state) = (false, RouteType::Post, false, None);
-    let route_names: Vec<TokenStream> = parse_stream(stream.clone(), &mut found_api_tag, &mut route_type, &mut after_function, &mut state)
+    let (mut found_api_tag, mut route_type, mut after_function, mut state, mut temp_state) = (false, RouteType::Post, false, None, "".to_string());
+    let route_names: Vec<TokenStream> = parse_stream(stream.clone(), &mut found_api_tag, &mut route_type, &mut after_function, &mut state, &mut temp_state)
         .into_iter().map(|(name, route, t)| {
             let ident = Ident::new(&route, Span::call_site());
             let string = format!("/{}", name);
@@ -101,7 +101,7 @@ enum RouteType {
 }
 
 /// Parse a TokenStream into a vec of route names
-fn parse_stream(stream: TokenStream, found_api_tag: &mut bool, route_type: &mut RouteType, after_function: &mut bool, state: &mut Option<String>) -> Vec<(String, String, RouteType)> {
+fn parse_stream(stream: TokenStream, found_api_tag: &mut bool, route_type: &mut RouteType, after_function: &mut bool, state: &mut Option<String>, temp_state: &mut String) -> Vec<(String, String, RouteType)> {
     let mut route_names = vec![];
     for tree in stream.into_iter() {
         match tree {
@@ -116,34 +116,40 @@ fn parse_stream(stream: TokenStream, found_api_tag: &mut bool, route_type: &mut 
                 }
                 if string == "fn" {
                     *after_function = true;
+                    
+                    if !temp_state.replace(' ', "").is_empty() {
+                        match state {
+                            Some(s) => if *s != temp_state.replace(' ', "") {
+                                panic!("Only one type is allowed. First type: {} Second Type: {}", s, temp_state.replace(' ', ""));
+                            },
+                            None => {
+                                *state = Some(temp_state.replace(' ', ""));
+                                *temp_state = "".to_string();
+                            }
+                        }
+                    }
                 }
 
                 if *found_api_tag && !*after_function && string != "pub" && string != "async" {
-                    if let Some(s) = state {
-                        *s = format!("{}{}", s, string);
-                    } else {
-                        *state = Some(string.clone());
-                    }
+                    *temp_state = format!("{}{}", temp_state, string);
                 }
 
                 if string == "get_api" {
                     *found_api_tag = true;
                     *route_type = RouteType::Get;
+                    *temp_state = "".to_string();
                 } else if string == "post_api" {
                     *found_api_tag = true;
                     *route_type = RouteType::Post;
+                    *temp_state = "".to_string();
                 }
             },
             TokenTree::Group(group) => {
-                route_names.extend(parse_stream(group.stream(), found_api_tag, route_type, after_function, state).into_iter());
+                route_names.extend(parse_stream(group.stream(), found_api_tag, route_type, after_function, state, temp_state).into_iter());
             },
             TokenTree::Punct(p) => {
                 if *found_api_tag && !*after_function {
-                    if let Some(s) = state {
-                        *s = format!("{}{}", s, p);
-                    } else {
-                        *state = Some(p.to_string());
-                    }
+                    *temp_state = format!("{}{}", temp_state, p);
                 }
             }
             _ => {}
