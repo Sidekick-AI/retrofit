@@ -497,12 +497,20 @@ async fn test_axum_routes_module() {
         pub fn greet(nm: &String, num: i32) -> String {
             format!("Hello {}{}", nm, num)
         }
+
+        #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+        pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+            let mut state = state.lock().unwrap();
+            let greeting = format!("Hello {}, I'm here with {}", name, state);
+            *state = name;
+            greeting
+        }
     }
 
     // Launch server
     let server_handle = tokio::spawn(async {
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(functions::routes().into_make_service())
+            .serve(functions::routes(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string()))).into_make_service())
             .await.unwrap();
     });
 
@@ -527,13 +535,22 @@ async fn test_axum_routes() {
             pub fn greet(nm: &String, num: i32) -> String {
                 format!("Hello {}{}", nm, num)
             }
+            
+            #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+            pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+                let mut state = state.lock().unwrap();
+                let greeting = format!("Hello {}, I'm here with {}", name, state);
+                *state = name;
+                greeting
+            }
         }
     }
 
     // Launch server
+    let router = functions::routes(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string())));
     let server_handle = tokio::spawn(async {
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(functions::routes().into_make_service())
+            .serve(router.into_make_service())
             .await.unwrap();
     });
 
