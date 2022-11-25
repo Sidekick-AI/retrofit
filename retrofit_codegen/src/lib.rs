@@ -1,7 +1,7 @@
-#[cfg(feature="rocket")]
-mod rocket;
-#[cfg(feature="axum")]
+#[cfg(feature = "axum")]
 mod axum;
+#[cfg(feature = "rocket")]
+mod rocket;
 
 use proc_macro::TokenStream;
 

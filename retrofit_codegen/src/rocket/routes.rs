@@ -1,25 +1,35 @@
-use proc_macro2::{TokenStream, TokenTree, Ident, Span};
+use proc_macro2::{Ident, Span, TokenStream, TokenTree};
 use quote::quote;
 
-pub fn routes_module(_header: proc_macro::TokenStream, stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn routes_module(
+    _header: proc_macro::TokenStream,
+    stream: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     let stream = proc_macro2::TokenStream::from(stream);
     // Get module name and inner stream
     let mut stream_iter = stream.into_iter();
     stream_iter.next();
     let module_name = match stream_iter.next().unwrap() {
         TokenTree::Ident(i) => Ident::new(&i.to_string(), Span::call_site()),
-        _ => {panic!("Attribute must be on a module")}
+        _ => {
+            panic!("Attribute must be on a module")
+        }
     };
     let stream = match stream_iter.next().unwrap() {
         TokenTree::Group(group) => group.stream(),
-        _ => {panic!("Attribute must be on a module")}
+        _ => {
+            panic!("Attribute must be on a module")
+        }
     };
 
     let (mut found_api_tag, mut after_function) = (false, false);
-    let route_names: Vec<Ident> = parse_stream(stream.clone(), &mut found_api_tag, &mut after_function)
-        .into_iter().map(|i| Ident::new(&i, Span::call_site())).collect();
+    let route_names: Vec<Ident> =
+        parse_stream(stream.clone(), &mut found_api_tag, &mut after_function)
+            .into_iter()
+            .map(|i| Ident::new(&i, Span::call_site()))
+            .collect();
 
-    proc_macro::TokenStream::from(quote!{
+    proc_macro::TokenStream::from(quote! {
         mod #module_name {
         #[cfg(feature = "server")]
         pub fn routes() -> Vec<rocket::Route> {
@@ -38,10 +48,13 @@ pub fn routes(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let stream = proc_macro2::TokenStream::from(stream);
 
     let (mut found_api_tag, mut after_function) = (false, false);
-    let route_names: Vec<Ident> = parse_stream(stream.clone(), &mut found_api_tag, &mut after_function)
-        .into_iter().map(|i| Ident::new(&i, Span::call_site())).collect();
+    let route_names: Vec<Ident> =
+        parse_stream(stream.clone(), &mut found_api_tag, &mut after_function)
+            .into_iter()
+            .map(|i| Ident::new(&i, Span::call_site()))
+            .collect();
 
-    proc_macro::TokenStream::from(quote!{
+    proc_macro::TokenStream::from(quote! {
         #[cfg(feature = "server")]
         pub fn routes() -> Vec<rocket::Route> {
             let routes = rocket::routes![
@@ -55,7 +68,11 @@ pub fn routes(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 /// Parse a TokenStream into a vec of route names
-fn parse_stream(stream: TokenStream, found_api_tag: &mut bool, after_function: &mut bool) -> Vec<String> {
+fn parse_stream(
+    stream: TokenStream,
+    found_api_tag: &mut bool,
+    after_function: &mut bool,
+) -> Vec<String> {
     let mut route_names = vec![];
     for tree in stream.into_iter() {
         match tree {
@@ -74,10 +91,12 @@ fn parse_stream(stream: TokenStream, found_api_tag: &mut bool, after_function: &
                 if string == "get_api" || string == "post_api" {
                     *found_api_tag = true;
                 }
-            },
+            }
             TokenTree::Group(group) => {
-                route_names.extend(parse_stream(group.stream(), found_api_tag, after_function).into_iter());
-            },
+                route_names.extend(
+                    parse_stream(group.stream(), found_api_tag, after_function).into_iter(),
+                );
+            }
             _ => {}
         }
     }
