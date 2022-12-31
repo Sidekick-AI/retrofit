@@ -14,5 +14,4 @@ proc-macro = true
 quote = "1.0.14"
 syn = {version="1.0.85", features=["full"]}
 proc-macro2 = "1.0.36"
-rand = "0.8.5"
 cfg-if = "1.0.0"

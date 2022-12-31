@@ -1,13 +1,8 @@
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-    str::FromStr,
-};
+use std::str::FromStr;
 
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
-use quote::{quote, ToTokens};
-use rand::{distributions::Alphanumeric, prelude::StdRng, Rng, SeedableRng};
+use proc_macro2::Ident;
+use quote::{quote, ToTokens, format_ident};
 use syn::{parse_macro_input, FnArg, ItemFn, Pat, PatIdent, PatType, Type, ReturnType};
 
 pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
@@ -16,11 +11,6 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
 
     // Get input function properties
     let mut args = input_fn.sig.inputs.clone();
-    let return_type = match input_fn.sig.output {
-        ReturnType::Default => quote!{()},
-        ReturnType::Type(_, ref ty) => quote!{#ty},
-    };
-    let input_fn_ident = input_fn.sig.ident.clone();
 
     // Create path for route
     let mut raw_args: Vec<&PatIdent> = input_fn
@@ -82,52 +72,22 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
         .map(|(ident, ty, _)| quote! {#ident: #ty})
         .collect();
 
-    let input_fn_ident_string = input_fn_ident.to_string();
-    let route_ident = Ident::new(
-        &format!("{}_route", input_fn_ident_string),
-        Span::call_site(),
-    );
-    let request_ident = Ident::new(
-        &format!("{}_request", input_fn_ident_string),
-        Span::call_site(),
-    );
-    let data_struct_ident =
-        Ident::new(&format!("{}Data", input_fn_ident_string), Span::call_site());
-
-    // Security type and random string
-    let secure_struct_ident = Ident::new(
-        &format!("{}Secure", input_fn_ident_string),
-        Span::call_site(),
-    );
-    let forbidden_struct_ident = Ident::new(
-        &format!("{}Forbidden", input_fn_ident_string),
-        Span::call_site(),
-    );
-    let mut s = DefaultHasher::new();
-    input_fn_ident_string.hash(&mut s);
-    let hash = s.finish();
-    let secure_string = format!(
-        "Bearer {}",
-        StdRng::seed_from_u64(hash)
-            .sample_iter(&Alphanumeric)
-            .take(10)
-            .map(char::from)
-            .collect::<String>()
-    );
+    let input_fn_ident_string = input_fn.sig.ident.to_string();
+    let route_ident = format_ident!("{}_route", input_fn_ident_string);
+    let request_ident = format_ident!("{}_request", input_fn_ident_string);
+    let data_struct_ident = format_ident!("{}Data", input_fn_ident_string);
 
     let (route_args, pass_through_state) = if args.is_empty() {
         if has_state {
             let state = parse_macro_input!(header as Type);
             (
-                quote! {_secure: #secure_struct_ident, axum::extract::State(state) : axum::extract::State<#state>
+                quote! {axum::extract::State(state) : axum::extract::State<#state>
                 },
                 quote! {&state},
             )
         } else {
             (
-                quote! {
-                    _secure: #secure_struct_ident
-                },
+                quote! {},
                 quote! {},
             )
         }
@@ -136,14 +96,13 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
         (
             quote! {
                 axum::extract::State(state) : axum::extract::State<#state>,
-                _secure: #secure_struct_ident,
                 axum::Json(#data_struct_ident{ #(#arg_idents),* }) : axum::Json<#data_struct_ident>,
             },
             quote! {, &state},
         )
     } else {
         (
-            quote! {_secure: #secure_struct_ident, axum::Json(#data_struct_ident{ #(#arg_idents),* }) : axum::Json<#data_struct_ident>
+            quote! {axum::Json(#data_struct_ident{ #(#arg_idents),* }) : axum::Json<#data_struct_ident>
             },
             quote! {},
         )
@@ -166,46 +125,16 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
         }
     };
 
+    let input_fn_ident = input_fn.sig.ident.clone();
+    let return_type = match input_fn.sig.output {
+        ReturnType::Default => quote!{()},
+        ReturnType::Type(_, ref ty) => quote!{#ty},
+    };
     TokenStream::from(quote! {
         // Original function
         #[cfg(feature = "server")]
         #[allow(clippy::ptr_arg)]
         #input_fn
-
-        // Secure Struct
-        #[derive(Debug)]
-        pub struct #secure_struct_ident;
-
-        pub struct #forbidden_struct_ident;
-
-        #[cfg(feature = "server")]
-        impl axum::response::IntoResponse for #forbidden_struct_ident {
-            fn into_response(self) -> axum::response::Response {
-                axum::http::StatusCode::FORBIDDEN.into_response()
-            }
-        }
-
-        #[cfg(feature = "server")]
-        #[axum::async_trait]
-        impl<S> axum::extract::FromRequestParts<S> for #secure_struct_ident
-        where
-            S: Sync + Send,
-        {
-            type Rejection = #forbidden_struct_ident;
-
-            async fn from_request_parts(
-                req: &mut http::request::Parts,
-                _: &S
-            ) -> Result<Self, Self::Rejection> {
-                if let Some(s) = req.headers.get("authorization") {
-                    if s == #secure_string {
-                        return Ok(Self);
-                    }
-                }
-
-                Err(#forbidden_struct_ident)
-            }
-        }
 
         // Data Struct
         #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -230,14 +159,12 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
             #[cfg(not(target_family = "wasm"))]
             return Ok(reqwest::Client::new()
                 .post(#request_path)
-                .header("authorization", #secure_string)
                 #attached_body
                 .send().await?
                 .json().await?);
 
             #[cfg(target_family = "wasm")]
             return Ok(reqwasm::http::Request::post(#reqwasm_request_path)
-                .header("authorization", #secure_string)
                 #attached_body
                 .send().await?
                 .json().await?);
