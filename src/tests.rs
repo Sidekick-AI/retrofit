@@ -1,6 +1,5 @@
 use retrofit_codegen::{get_api, post_api};
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_get_api() {
@@ -12,11 +11,11 @@ async fn test_axum_get_api() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/plus", axum::routing::get(plus_route));
+        let app = axum::Router::new().route("/plus", axum::routing::get(plus_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     let input1 = 10;
@@ -29,7 +28,6 @@ async fn test_axum_get_api() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_get_api_state() {
@@ -47,10 +45,13 @@ async fn test_axum_get_api_state() {
     let server_handle = tokio::spawn(async {
         let app = axum::Router::new()
             .route("/greet", axum::routing::get(greet_route))
-            .layer(axum::Extension(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string()))));
+            .with_state(std::sync::Arc::new(std::sync::Mutex::new(
+                "Robert".to_string(),
+            )));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     assert_eq!(
@@ -66,7 +67,6 @@ async fn test_axum_get_api_state() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_get_api_ref() {
@@ -78,11 +78,11 @@ async fn test_axum_get_api_ref() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/greet", axum::routing::get(greet_route));
+        let app = axum::Router::new().route("/greet", axum::routing::get(greet_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     let name = "Sheila".to_string();
@@ -94,7 +94,6 @@ async fn test_axum_get_api_ref() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_post_api() {
@@ -105,11 +104,11 @@ async fn test_axum_post_api() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/plus", axum::routing::post(plus_route));
+        let app = axum::Router::new().route("/plus", axum::routing::post(plus_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     let input1 = 10;
@@ -122,7 +121,6 @@ async fn test_axum_post_api() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_post_api_vec() {
@@ -133,11 +131,11 @@ async fn test_axum_post_api_vec() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/sum", axum::routing::post(sum_route));
+        let app = axum::Router::new().route("/sum", axum::routing::post(sum_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     let inputs = vec![10, 123, 4354];
@@ -149,7 +147,6 @@ async fn test_axum_post_api_vec() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_post_api_state() {
@@ -166,10 +163,13 @@ async fn test_axum_post_api_state() {
     let server_handle = tokio::spawn(async {
         let app = axum::Router::new()
             .route("/greet", axum::routing::post(greet_route))
-            .layer(axum::Extension(std::sync::Arc::new(std::sync::Mutex::new("Robert".to_string()))));
+            .with_state(std::sync::Arc::new(std::sync::Mutex::new(
+                "Robert".to_string(),
+            )));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     assert_eq!(
@@ -185,7 +185,6 @@ async fn test_axum_post_api_state() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_post_api_ref() {
@@ -197,24 +196,20 @@ async fn test_axum_post_api_ref() {
 
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/greet", axum::routing::post(greet_route));
+        let app = axum::Router::new().route("/greet", axum::routing::post(greet_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
-            .await.unwrap();
+            .await
+            .unwrap();
     });
 
     let name = "Gordon Shumway".to_string();
-    assert_eq!(
-        greet_request(&name, 23).await,
-        greet(&name, 23)
-    );
+    assert_eq!(greet_request(&name, 23).await, greet(&name, 23));
 
     server_handle.abort();
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_routes_module() {
@@ -225,13 +220,36 @@ async fn test_axum_routes_module() {
         pub fn greet(nm: &String, num: i32) -> String {
             format!("Hello {}{}", nm, num)
         }
+
+        #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+        pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+            let mut state = state.lock().unwrap();
+            let greeting = format!("Hello {}, I'm here with {}", name, state);
+            *state = name;
+            greeting
+        }
+
+        #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+        pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+            let mut state = state.lock().unwrap();
+            let greeting = format!("Hello {}, I'm here with {}", name, state);
+            *state = name;
+            greeting
+        }
     }
 
     // Launch server
     let server_handle = tokio::spawn(async {
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(functions::routes().into_make_service())
-            .await.unwrap();
+            .serve(
+                functions::routes()
+                    .with_state(std::sync::Arc::new(std::sync::Mutex::new(
+                        "Robert".to_string(),
+                    )))
+                    .into_make_service(),
+            )
+            .await
+            .unwrap();
     });
 
     let name = "Gordon Shumway".to_string();
@@ -244,7 +262,6 @@ async fn test_axum_routes_module() {
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
-#[cfg(feature="axum")]
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_routes() {
@@ -255,14 +272,34 @@ async fn test_axum_routes() {
             pub fn greet(nm: &String, num: i32) -> String {
                 format!("Hello {}{}", nm, num)
             }
+
+            #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+            pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+                let mut state = state.lock().unwrap();
+                let greeting = format!("Hello {}, I'm here with {}", name, state);
+                *state = name;
+                greeting
+            }
+
+            #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+            pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+                let mut state = state.lock().unwrap();
+                let greeting = format!("Hello {}, I'm here with {}", name, state);
+                *state = name;
+                greeting
+            }
         }
     }
 
     // Launch server
+    let router = functions::routes().with_state(std::sync::Arc::new(std::sync::Mutex::new(
+        "Robert".to_string(),
+    )));
     let server_handle = tokio::spawn(async {
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(functions::routes().into_make_service())
-            .await.unwrap();
+            .serve(router.into_make_service())
+            .await
+            .unwrap();
     });
 
     let name = "Gordon Shumway".to_string();
