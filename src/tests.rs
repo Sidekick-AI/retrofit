@@ -2,7 +2,7 @@ use retrofit_codegen::api;
 
 #[tokio::test]
 #[serial_test::serial]
-async fn test_axum_post_api() {
+async fn test_api() {
     #[api]
     fn plus(num1: i32, num2: i32) -> i32 {
         num1 + num2
@@ -29,15 +29,22 @@ async fn test_axum_post_api() {
 
 #[tokio::test]
 #[serial_test::serial]
-async fn test_axum_post_api_vec() {
+async fn test_api_vec() {
     #[api]
     fn sum(nums: Vec<i32>) -> i32 {
         nums.iter().sum()
     }
 
+    #[api]
+    fn hello_world() {
+        println!("Hello World!");
+    }
+
     // Launch server
     let server_handle = tokio::spawn(async {
-        let app = axum::Router::new().route("/sum", axum::routing::post(sum_route));
+        let app = axum::Router::new()
+            .route("/sum", axum::routing::post(sum_route))
+            .route("/hello_world", axum::routing::post(hello_world_route));
         axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
             .serve(app.into_make_service())
             .await
@@ -49,13 +56,15 @@ async fn test_axum_post_api_vec() {
     let result = sum_request(inputs.clone()).await.unwrap();
     assert_eq!(result, sum(inputs));
 
+    hello_world_request().await.unwrap();
+
     server_handle.abort();
     assert!(server_handle.await.unwrap_err().is_cancelled());
 }
 
 #[tokio::test]
 #[serial_test::serial]
-async fn test_axum_post_api_state() {
+async fn test_api_state() {
     // Test a GET API with a managed state
     #[api(std::sync::Arc<std::sync::Mutex<String>>)]
     fn greet(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
@@ -93,7 +102,7 @@ async fn test_axum_post_api_state() {
 
 #[tokio::test]
 #[serial_test::serial]
-async fn test_axum_post_api_ref() {
+async fn test_api_ref() {
     // Test POST API with references
     #[api]
     fn greet(nm: &String, num: i32) -> String {
@@ -118,7 +127,7 @@ async fn test_axum_post_api_ref() {
 
 #[tokio::test]
 #[serial_test::serial]
-async fn test_axum_routes_module() {
+async fn test_routes_module() {
     #[crate::routes_module]
     mod functions {
         // Test POST API with references
@@ -170,7 +179,7 @@ async fn test_axum_routes_module() {
 
 #[tokio::test]
 #[serial_test::serial]
-async fn test_axum_routes() {
+async fn test_routes() {
     mod functions {
         crate::routes! {
             // Test POST API with references

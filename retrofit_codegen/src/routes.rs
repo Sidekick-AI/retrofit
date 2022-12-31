@@ -128,10 +128,7 @@ fn parse_stream(
                 let string = i.to_string();
                 if *after_function {
                     if *found_api_tag {
-                        route_names.push((
-                            string.clone(),
-                            format!("{}_route", string),
-                        ));
+                        route_names.push((string.clone(), format!("{}_route", string)));
                         *found_api_tag = false;
                     }
                     *after_function = false;
@@ -161,7 +158,7 @@ fn parse_stream(
                 if *found_api_tag && !*after_function && string != "pub" && string != "async" {
                     *temp_state = format!("{}{}", temp_state, string);
                 }
-                
+
                 if string == "api" {
                     *found_api_tag = true;
                     *temp_state = "".to_string();
