@@ -1,0 +1,28 @@
+[package]
+name = "retrofit"
+version = "0.3.2"
+edition = "2021"
+description = "Automatically generate REST APIs for functions"
+license = "MIT OR Apache-2.0"
+readme = "../README.md"
+repository = "https://github.com/Sidekick-AI/retrofit/"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["client", "server"]
+client = []
+server = []
+
+[dependencies]
+#retrofit_codegen = "0.3.2"
+retrofit_codegen = {path="./retrofit_codegen"}
+serde = "1"
+serde_json = "1"
+
+[dev-dependencies]
+tokio = {version="1", features=["full"]}
+reqwasm = "0.4"
+reqwest = {version="0.11", features=["json"]}
+serial_test = "0.5"
+axum = {version="0.6", features=["headers"]}

@@ -10,11 +10,6 @@ license = "MIT OR Apache-2.0"
 [lib]
 proc-macro = true
 
-[features]
-default = ["axum"]
-rocket = []
-axum = []
-
 [dependencies]
 quote = "1.0.14"
 syn = {version="1.0.85", features=["full"]}
