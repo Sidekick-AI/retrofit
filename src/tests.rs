@@ -21,7 +21,7 @@ async fn test_axum_get_api() {
     let input1 = 10;
     let input2 = 100;
     // Call request
-    let result = plus_request(input1, input2).await;
+    let result = plus_request(input1, input2).await.unwrap();
     assert_eq!(result, plus(input1, input2));
 
     server_handle.abort();
@@ -36,7 +36,7 @@ async fn test_axum_get_api_state() {
     fn greet(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
         let name = name.replace('"', "");
         let mut state = state.lock().unwrap();
-        let greeting = format!("Hello {}, I'm here with {}", name, state);
+        let greeting = format!("Hello {name}, I'm here with {state}");
         *state = name;
         greeting
     }
@@ -55,11 +55,11 @@ async fn test_axum_get_api_state() {
     });
 
     assert_eq!(
-        greet_request("Joe".to_string()).await,
+        greet_request("Joe".to_string()).await.unwrap(),
         "Hello Joe, I'm here with Robert".to_string()
     );
     assert_eq!(
-        greet_request("Frank".to_string()).await,
+        greet_request("Frank".to_string()).await.unwrap(),
         "Hello Frank, I'm here with Joe".to_string()
     );
 
@@ -87,7 +87,7 @@ async fn test_axum_get_api_ref() {
 
     let name = "Sheila".to_string();
     // Call request
-    let result = greet_request(&name).await;
+    let result = greet_request(&name).await.unwrap();
     assert_eq!(result, greet(&name));
 
     server_handle.abort();
@@ -114,7 +114,7 @@ async fn test_axum_post_api() {
     let input1 = 10;
     let input2 = 100;
     // Call request
-    let result = plus_request(input1, input2).await;
+    let result = plus_request(input1, input2).await.unwrap();
     assert_eq!(result, plus(input1, input2));
 
     server_handle.abort();
@@ -140,7 +140,7 @@ async fn test_axum_post_api_vec() {
 
     let inputs = vec![10, 123, 4354];
     // Call request
-    let result = sum_request(inputs.clone()).await;
+    let result = sum_request(inputs.clone()).await.unwrap();
     assert_eq!(result, sum(inputs));
 
     server_handle.abort();
@@ -154,7 +154,7 @@ async fn test_axum_post_api_state() {
     #[post_api(std::sync::Arc<std::sync::Mutex<String>>)]
     fn greet(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
         let mut state = state.lock().unwrap();
-        let greeting = format!("Hello {}, I'm here with {}", name, state);
+        let greeting = format!("Hello {name}, I'm here with {state}");
         *state = name;
         greeting
     }
@@ -173,11 +173,11 @@ async fn test_axum_post_api_state() {
     });
 
     assert_eq!(
-        greet_request("Joe".to_string()).await,
+        greet_request("Joe".to_string()).await.unwrap(),
         "Hello Joe, I'm here with Robert".to_string()
     );
     assert_eq!(
-        greet_request("Frank".to_string()).await,
+        greet_request("Frank".to_string()).await.unwrap(),
         "Hello Frank, I'm here with Joe".to_string()
     );
 
@@ -191,7 +191,7 @@ async fn test_axum_post_api_ref() {
     // Test POST API with references
     #[post_api]
     fn greet(nm: &String, num: i32) -> String {
-        format!("Hello {}{}", nm, num)
+        format!("Hello {nm}{num}")
     }
 
     // Launch server
@@ -204,7 +204,7 @@ async fn test_axum_post_api_ref() {
     });
 
     let name = "Gordon Shumway".to_string();
-    assert_eq!(greet_request(&name, 23).await, greet(&name, 23));
+    assert_eq!(greet_request(&name, 23).await.unwrap(), greet(&name, 23));
 
     server_handle.abort();
     assert!(server_handle.await.unwrap_err().is_cancelled());
@@ -218,13 +218,13 @@ async fn test_axum_routes_module() {
         // Test POST API with references
         #[crate::post_api]
         pub fn greet(nm: &String, num: i32) -> String {
-            format!("Hello {}{}", nm, num)
+            format!("Hello {nm}{num}")
         }
 
         #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
         pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
             let mut state = state.lock().unwrap();
-            let greeting = format!("Hello {}, I'm here with {}", name, state);
+            let greeting = format!("Hello {name}, I'm here with {state}");
             *state = name;
             greeting
         }
@@ -232,7 +232,7 @@ async fn test_axum_routes_module() {
         #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
         pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
             let mut state = state.lock().unwrap();
-            let greeting = format!("Hello {}, I'm here with {}", name, state);
+            let greeting = format!("Hello {name}, I'm here with {state}");
             *state = name;
             greeting
         }
@@ -254,7 +254,7 @@ async fn test_axum_routes_module() {
 
     let name = "Gordon Shumway".to_string();
     assert_eq!(
-        functions::greet_request(&name, 23).await,
+        functions::greet_request(&name, 23).await.unwrap(),
         functions::greet(&name, 23)
     );
 
@@ -270,13 +270,13 @@ async fn test_axum_routes() {
             // Test POST API with references
             #[crate::post_api]
             pub fn greet(nm: &String, num: i32) -> String {
-                format!("Hello {}{}", nm, num)
+                format!("Hello {nm}{num}")
             }
 
             #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
             pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
                 let mut state = state.lock().unwrap();
-                let greeting = format!("Hello {}, I'm here with {}", name, state);
+                let greeting = format!("Hello {name}, I'm here with {state}");
                 *state = name;
                 greeting
             }
@@ -284,7 +284,7 @@ async fn test_axum_routes() {
             #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
             pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
                 let mut state = state.lock().unwrap();
-                let greeting = format!("Hello {}, I'm here with {}", name, state);
+                let greeting = format!("Hello {name}, I'm here with {state}");
                 *state = name;
                 greeting
             }
@@ -304,7 +304,7 @@ async fn test_axum_routes() {
 
     let name = "Gordon Shumway".to_string();
     assert_eq!(
-        functions::greet_request(&name, 23).await,
+        functions::greet_request(&name, 23).await.unwrap(),
         functions::greet(&name, 23)
     );
 

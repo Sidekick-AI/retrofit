@@ -8,7 +8,7 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
 use rand::{distributions::Alphanumeric, prelude::StdRng, Rng, SeedableRng};
-use syn::{parse_macro_input, FnArg, ItemFn, Pat, PatIdent, PatType, Type};
+use syn::{parse_macro_input, FnArg, ItemFn, Pat, PatIdent, PatType, Type, ReturnType};
 
 pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
     let has_state = !header.to_string().replace(' ', "").is_empty();
@@ -16,7 +16,10 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
 
     // Get input function properties
     let mut args = input_fn.sig.inputs.clone();
-    let return_type = input_fn.sig.output.clone();
+    let return_type = match input_fn.sig.output {
+        ReturnType::Default => quote!{()},
+        ReturnType::Type(_, ref ty) => quote!{#ty},
+    };
     let input_fn_ident = input_fn.sig.ident.clone();
 
     // Create path for route
@@ -213,20 +216,20 @@ pub fn get_api(header: TokenStream, function: TokenStream) -> TokenStream {
         // Request function
         #[cfg(feature = "client")]
         #[allow(clippy::ptr_arg)]
-        pub async fn #request_ident ( #args ) #return_type {
+        pub async fn #request_ident ( #args ) -> anyhow::Result<#return_type> {
             // Send request to endpoint
             #[cfg(not(target_family = "wasm"))]
-            return reqwest::Client::new()
+            return Ok(reqwest::Client::new()
                 .get(#request_path)
                 .header("authorization", #secure_string)
-                .send().await.unwrap()
-                .json().await.unwrap();
+                .send().await?
+                .json().await?);
 
             #[cfg(target_family = "wasm")]
-            return reqwasm::http::Request::get(#reqwasm_request_path)
+            return Ok(reqwasm::http::Request::get(#reqwasm_request_path)
                 .header("authorization", #secure_string)
-                .send().await.unwrap()
-                .json().await.unwrap();
+                .send().await?
+                .json().await?);
         }
     })
 }
