@@ -1,103 +1,9 @@
-use retrofit_codegen::{get_api, post_api};
-
-#[tokio::test]
-#[serial_test::serial]
-async fn test_axum_get_api() {
-    // Test a normal GET API
-    #[get_api]
-    fn plus(num1: i32, num2: i32) -> i32 {
-        num1 + num2
-    }
-
-    // Launch server
-    let server_handle = tokio::spawn(async {
-        let app = axum::Router::new().route("/plus", axum::routing::get(plus_route));
-        axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
-    });
-
-    let input1 = 10;
-    let input2 = 100;
-    // Call request
-    let result = plus_request(input1, input2).await.unwrap();
-    assert_eq!(result, plus(input1, input2));
-
-    server_handle.abort();
-    assert!(server_handle.await.unwrap_err().is_cancelled());
-}
-
-#[tokio::test]
-#[serial_test::serial]
-async fn test_axum_get_api_state() {
-    // Test a GET API with a managed state
-    #[get_api(std::sync::Arc<std::sync::Mutex<String>>)]
-    fn greet(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
-        let name = name.replace('"', "");
-        let mut state = state.lock().unwrap();
-        let greeting = format!("Hello {name}, I'm here with {state}");
-        *state = name;
-        greeting
-    }
-
-    // Launch server
-    let server_handle = tokio::spawn(async {
-        let app = axum::Router::new()
-            .route("/greet", axum::routing::get(greet_route))
-            .with_state(std::sync::Arc::new(std::sync::Mutex::new(
-                "Robert".to_string(),
-            )));
-        axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
-    });
-
-    assert_eq!(
-        greet_request("Joe".to_string()).await.unwrap(),
-        "Hello Joe, I'm here with Robert".to_string()
-    );
-    assert_eq!(
-        greet_request("Frank".to_string()).await.unwrap(),
-        "Hello Frank, I'm here with Joe".to_string()
-    );
-
-    server_handle.abort();
-    assert!(server_handle.await.unwrap_err().is_cancelled());
-}
-
-#[tokio::test]
-#[serial_test::serial]
-async fn test_axum_get_api_ref() {
-    // Test a normal GET API
-    #[get_api]
-    fn greet(name: &String) -> String {
-        format!("Hello {}", name.replace('"', ""))
-    }
-
-    // Launch server
-    let server_handle = tokio::spawn(async {
-        let app = axum::Router::new().route("/greet", axum::routing::get(greet_route));
-        axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 8000)))
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
-    });
-
-    let name = "Sheila".to_string();
-    // Call request
-    let result = greet_request(&name).await.unwrap();
-    assert_eq!(result, greet(&name));
-
-    server_handle.abort();
-    assert!(server_handle.await.unwrap_err().is_cancelled());
-}
+use retrofit_codegen::api;
 
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_post_api() {
-    #[post_api]
+    #[api]
     fn plus(num1: i32, num2: i32) -> i32 {
         num1 + num2
     }
@@ -124,7 +30,7 @@ async fn test_axum_post_api() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_axum_post_api_vec() {
-    #[post_api]
+    #[api]
     fn sum(nums: Vec<i32>) -> i32 {
         nums.iter().sum()
     }
@@ -151,7 +57,7 @@ async fn test_axum_post_api_vec() {
 #[serial_test::serial]
 async fn test_axum_post_api_state() {
     // Test a GET API with a managed state
-    #[post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+    #[api(std::sync::Arc<std::sync::Mutex<String>>)]
     fn greet(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
         let mut state = state.lock().unwrap();
         let greeting = format!("Hello {name}, I'm here with {state}");
@@ -189,7 +95,7 @@ async fn test_axum_post_api_state() {
 #[serial_test::serial]
 async fn test_axum_post_api_ref() {
     // Test POST API with references
-    #[post_api]
+    #[api]
     fn greet(nm: &String, num: i32) -> String {
         format!("Hello {nm}{num}")
     }
@@ -216,12 +122,12 @@ async fn test_axum_routes_module() {
     #[crate::routes_module]
     mod functions {
         // Test POST API with references
-        #[crate::post_api]
+        #[crate::api]
         pub fn greet(nm: &String, num: i32) -> String {
             format!("Hello {nm}{num}")
         }
 
-        #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+        #[crate::api(std::sync::Arc<std::sync::Mutex<String>>)]
         pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
             let mut state = state.lock().unwrap();
             let greeting = format!("Hello {name}, I'm here with {state}");
@@ -229,7 +135,7 @@ async fn test_axum_routes_module() {
             greeting
         }
 
-        #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+        #[crate::api(std::sync::Arc<std::sync::Mutex<String>>)]
         pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
             let mut state = state.lock().unwrap();
             let greeting = format!("Hello {name}, I'm here with {state}");
@@ -268,12 +174,12 @@ async fn test_axum_routes() {
     mod functions {
         crate::routes! {
             // Test POST API with references
-            #[crate::post_api]
+            #[crate::api]
             pub fn greet(nm: &String, num: i32) -> String {
                 format!("Hello {nm}{num}")
             }
 
-            #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+            #[crate::api(std::sync::Arc<std::sync::Mutex<String>>)]
             pub fn greet2(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
                 let mut state = state.lock().unwrap();
                 let greeting = format!("Hello {name}, I'm here with {state}");
@@ -281,7 +187,7 @@ async fn test_axum_routes() {
                 greeting
             }
 
-            #[crate::post_api(std::sync::Arc<std::sync::Mutex<String>>)]
+            #[crate::api(std::sync::Arc<std::sync::Mutex<String>>)]
             pub fn greet3(name: String, state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
                 let mut state = state.lock().unwrap();
                 let greeting = format!("Hello {name}, I'm here with {state}");

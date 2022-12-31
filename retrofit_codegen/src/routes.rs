@@ -22,24 +22,20 @@ pub fn routes_module(
         }
     };
 
-    let (mut found_api_tag, mut route_type, mut after_function, mut state, mut temp_state) =
-        (false, RouteType::Post, false, None, "".to_string());
+    let (mut found_api_tag, mut after_function, mut state, mut temp_state) =
+        (false, false, None, "".to_string());
     let route_names: Vec<TokenStream> = parse_stream(
         stream.clone(),
         &mut found_api_tag,
-        &mut route_type,
         &mut after_function,
         &mut state,
         &mut temp_state,
     )
     .into_iter()
-    .map(|(name, route, t)| {
+    .map(|(name, route)| {
         let ident = Ident::new(&route, Span::call_site());
         let string = format!("/{}", name);
-        match t {
-            RouteType::Get => quote! {#string, axum::routing::get(#ident)},
-            RouteType::Post => quote! {#string, axum::routing::post(#ident)},
-        }
+        quote! {#string, axum::routing::post(#ident)}
     })
     .collect();
 
@@ -75,24 +71,20 @@ pub fn routes_module(
 pub fn routes(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let stream = proc_macro2::TokenStream::from(stream);
 
-    let (mut found_api_tag, mut route_type, mut after_function, mut state, mut temp_state) =
-        (false, RouteType::Post, false, None, "".to_string());
+    let (mut found_api_tag, mut after_function, mut state, mut temp_state) =
+        (false, false, None, "".to_string());
     let route_names: Vec<TokenStream> = parse_stream(
         stream.clone(),
         &mut found_api_tag,
-        &mut route_type,
         &mut after_function,
         &mut state,
         &mut temp_state,
     )
     .into_iter()
-    .map(|(name, route, t)| {
+    .map(|(name, route)| {
         let ident = Ident::new(&route, Span::call_site());
         let string = format!("/{}", name);
-        match t {
-            RouteType::Get => quote! {#string, axum::routing::get(#ident)},
-            RouteType::Post => quote! {#string, axum::routing::post(#ident)},
-        }
+        quote! {#string, axum::routing::post(#ident)}
     })
     .collect();
 
@@ -121,21 +113,14 @@ pub fn routes(stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     }
 }
 
-#[derive(Clone)]
-enum RouteType {
-    Get,
-    Post,
-}
-
 /// Parse a TokenStream into a vec of route names
 fn parse_stream(
     stream: TokenStream,
     found_api_tag: &mut bool,
-    route_type: &mut RouteType,
     after_function: &mut bool,
     state: &mut Option<String>,
     temp_state: &mut String,
-) -> Vec<(String, String, RouteType)> {
+) -> Vec<(String, String)> {
     let mut route_names = vec![];
     for tree in stream.into_iter() {
         match tree {
@@ -146,7 +131,6 @@ fn parse_stream(
                         route_names.push((
                             string.clone(),
                             format!("{}_route", string),
-                            route_type.clone(),
                         ));
                         *found_api_tag = false;
                     }
@@ -177,14 +161,9 @@ fn parse_stream(
                 if *found_api_tag && !*after_function && string != "pub" && string != "async" {
                     *temp_state = format!("{}{}", temp_state, string);
                 }
-
-                if string == "get_api" {
+                
+                if string == "api" {
                     *found_api_tag = true;
-                    *route_type = RouteType::Get;
-                    *temp_state = "".to_string();
-                } else if string == "post_api" {
-                    *found_api_tag = true;
-                    *route_type = RouteType::Post;
                     *temp_state = "".to_string();
                 }
             }
@@ -193,7 +172,6 @@ fn parse_stream(
                     parse_stream(
                         group.stream(),
                         found_api_tag,
-                        route_type,
                         after_function,
                         state,
                         temp_state,

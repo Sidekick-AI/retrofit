@@ -10,7 +10,7 @@ use quote::{quote, ToTokens};
 use rand::{distributions::Alphanumeric, prelude::StdRng, Rng, SeedableRng};
 use syn::{parse_macro_input, FnArg, ItemFn, Pat, PatIdent, PatType, Type, ReturnType};
 
-pub fn post_api(header: TokenStream, function: TokenStream) -> TokenStream {
+pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
     let has_state = !header.to_string().replace(' ', "").is_empty();
     let input_fn = parse_macro_input!(function as ItemFn);
 
