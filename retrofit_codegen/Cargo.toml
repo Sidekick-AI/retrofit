@@ -1,6 +1,6 @@
 [package]
 name = "retrofit_codegen"
-version = "0.3.6"
+version = "0.4.0"
 edition = "2021"
 description = "proc macro crate for retrofit"
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,6 @@ license = "MIT OR Apache-2.0"
 proc-macro = true
 
 [dependencies]
-quote = "1.0.14"
-syn = {version="1.0.85", features=["full"]}
-proc-macro2 = "1.0.36"
-cfg-if = "1.0.0"
+quote = "1.0"
+syn = {version="1.0", features=["full"]}
+proc-macro2 = "1.0"

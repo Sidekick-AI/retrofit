@@ -49,25 +49,30 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
     let input_fn_ident_string = input_fn.sig.ident.to_string();
     let data_struct_ident = format_ident!("{}Data", input_fn_ident_string);
 
+    let destructure = if args.is_empty() {quote!{_}} else {quote!{#data_struct_ident{ #(#arg_idents),* }}};
     let route_args = if has_state {
         let state = parse_macro_input!(header as Type);
         quote! {
             axum::extract::State(state) : axum::extract::State<#state>,
-            axum::Json(#data_struct_ident{ #(#arg_idents),* }) : axum::Json<#data_struct_ident>,
+            axum::Json(#destructure) : axum::Json<#data_struct_ident>,
         }
     } else {
-        quote! {axum::Json(#data_struct_ident{ #(#arg_idents),* }) : axum::Json<#data_struct_ident>}
+        quote! {axum::Json(#destructure) : axum::Json<#data_struct_ident>}
     };
     let pass_through_state = if has_state {
-        quote! {, &state}
+        if args.is_empty() {
+            quote!{&state}
+        } else {
+            quote! {, &state}
+        }
     } else {
         quote! {}
     };
 
     let input_fn_ident = input_fn.sig.ident.clone();
     let return_type = match input_fn.sig.output {
-        ReturnType::Default => quote! {()},
-        ReturnType::Type(_, ref ty) => quote! {#ty},
+        ReturnType::Default => quote! {-> anyhow::Result<()>},
+        ReturnType::Type(_, ref ty) => quote! {-> anyhow::Result<#ty>},
     };
     let route_ident = format_ident!("{}_route", input_fn_ident_string);
     let request_ident = format_ident!("{}_request", input_fn_ident_string);
@@ -95,7 +100,7 @@ pub fn api(header: TokenStream, function: TokenStream) -> TokenStream {
         // Request function
         #[cfg(feature = "client")]
         #[allow(clippy::ptr_arg)]
-        pub async fn #request_ident ( #args ) -> anyhow::Result<#return_type> {
+        pub async fn #request_ident ( #args ) #return_type {
             // Send request to endpoint
             #[cfg(not(target_family = "wasm"))]
             return Ok(reqwest::Client::new()

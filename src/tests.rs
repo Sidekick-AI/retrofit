@@ -74,10 +74,17 @@ async fn test_api_state() {
         greeting
     }
 
+    #[api(std::sync::Arc<std::sync::Mutex<String>>)]
+    fn greet_no_inp(state: &std::sync::Arc<std::sync::Mutex<String>>) -> String {
+        let state = state.lock().unwrap();
+        format!("Hello I'm here with {state}")
+    }
+
     // Launch server
     let server_handle = tokio::spawn(async {
         let app = axum::Router::new()
             .route("/greet", axum::routing::post(greet_route))
+            .route("/greet_no_inp", axum::routing::post(greet_no_inp_route))
             .with_state(std::sync::Arc::new(std::sync::Mutex::new(
                 "Robert".to_string(),
             )));
@@ -94,6 +101,11 @@ async fn test_api_state() {
     assert_eq!(
         greet_request("Frank".to_string()).await.unwrap(),
         "Hello Frank, I'm here with Joe".to_string()
+    );
+
+    assert_eq!(
+        greet_no_inp_request().await.unwrap(),
+        "Hello I'm here with Frank".to_string()
     );
 
     server_handle.abort();
