@@ -21,8 +21,8 @@ jobs:
         path: main
     - name: Build
       run: cargo build --verbose
-      working-directory: ./main/retrofit
+      working-directory: ./main
       
     - name: Run tests
       run: cargo test --verbose
-      working-directory: ./main/retrofit
+      working-directory: ./main
